@@ -12,21 +12,21 @@ info:
   title: Dynamic Data Manipulation API
   version: 1.0.0
 servers:
-- url: /
+  - url: /
 paths:
-  /employee/{employee_id}:
+  /employee/{unique_id}:
     get:
       description: Returns an employee
       operationId: generic_get_single
       parameters:
-      - explode: false
-        in: path
-        name: employee_id
-        required: true
-        schema:
-          format: uuid
-          type: string
-        style: simple
+        - explode: false
+          in: path
+          name: unique_id
+          required: true
+          schema:
+            format: uuid
+            type: string
+          style: simple
       responses:
         "200":
           content:
@@ -63,14 +63,14 @@ paths:
       description: Updates an employee
       operationId: generic_put_single
       parameters:
-      - explode: false
-        in: path
-        name: employee_id
-        required: true
-        schema:
-          format: uuid
-          type: string
-        style: simple
+        - explode: false
+          in: path
+          name: unique_id
+          required: true
+          schema:
+            format: uuid
+            type: string
+          style: simple
       requestBody:
         content:
           application/json:
@@ -183,7 +183,7 @@ components:
     EmployeeId:
       explode: false
       in: path
-      name: employee_id
+      name: unique_id
       required: true
       schema:
         format: uuid
@@ -220,12 +220,12 @@ components:
     Employees:
       description: Collection of Employees
       example:
-      - id: a0e7fd7e-7134-46da-b6be-f152cff23da5
-        firstname: Izzy
-        lastname: Van isteren
-      - id: a0e7fd7e-7134-46da-b6be-f152cff23da5
-        firstname: Peter
-        lastname: Celie
+        - id: a0e7fd7e-7134-46da-b6be-f152cff23da5
+          firstname: Izzy
+          lastname: Van isteren
+        - id: a0e7fd7e-7134-46da-b6be-f152cff23da5
+          firstname: Peter
+          lastname: Celie
       properties:
         employees:
           items:
@@ -267,6 +267,6 @@ components:
         message:
           type: string
       required:
-      - code
-      - message
+        - code
+        - message
       type: object
