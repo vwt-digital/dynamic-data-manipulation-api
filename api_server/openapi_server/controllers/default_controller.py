@@ -1,7 +1,4 @@
-import connexion
-import six
-
-from openapi_server import util
+from flask import jsonify
 
 
 def generic_get_columns():  # noqa: E501
@@ -10,7 +7,18 @@ def generic_get_columns():  # noqa: E501
     Returns column definitions # noqa: E501
 
     """
-    return 'do some magic!'
+    return jsonify([
+        {
+            'title': 'id',
+            'type': 'string'
+        }, {
+            'title': 'firstname',
+            'type': 'string'
+        }, {
+            'title': 'lastname',
+            'type': 'string'
+        }
+    ])
 
 
 def generic_get_multiple():  # noqa: E501
@@ -19,7 +27,17 @@ def generic_get_multiple():  # noqa: E501
     Returns a list of entities based on a kind # noqa: E501
 
     """
-    return 'do some magic!'
+    return jsonify([
+        {
+            "id": "a0e7fd7e-7134-46da-b6be-f152cff23da5",
+            "firstname": "Izzy",
+            "lastname": "Van isteren"
+        }, {
+            "id": "a0e7fd7e-7134-46da-b6be-f152cff23da5",
+            "firstname": "Peter",
+            "lastname": "Celie"
+        }
+    ])
 
 
 def generic_get_single(unique_id):  # noqa: E501
@@ -28,7 +46,11 @@ def generic_get_single(unique_id):  # noqa: E501
     Returns an entity based on a kind # noqa: E501
 
     """
-    return 'do some magic!'
+    return jsonify({
+        "id": "a0e7fd7e-7134-46da-b6be-f152cff23da5",
+        "firstname": "Izzy",
+        "lastname": "Van isteren"
+    })
 
 
 def generic_post_single():  # noqa: E501
@@ -37,7 +59,11 @@ def generic_post_single():  # noqa: E501
     Creates an entity based on a kind  # noqa: E501
 
     """
-    return 'do some magic!'
+    return jsonify({
+        "id": "a0e7fd7e-7134-46da-b6be-f152cff23da5",
+        "firstname": "Izzy",
+        "lastname": "Van isteren"
+    })
 
 
 def generic_put_single(unique_id):  # noqa: E501
@@ -46,4 +72,8 @@ def generic_put_single(unique_id):  # noqa: E501
     Updates an entity based on a kind  # noqa: E501
 
     """
-    return 'do some magic!'
+    return jsonify({
+        "id": "a0e7fd7e-7134-46da-b6be-f152cff23da5",
+        "firstname": "Izzy",
+        "lastname": "Van isteren"
+    })
