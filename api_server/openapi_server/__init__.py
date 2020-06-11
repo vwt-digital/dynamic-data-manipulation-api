@@ -11,8 +11,9 @@ from connexion.lifecycle import ConnexionResponse
 from connexion.utils import is_null
 from flask_cors import CORS
 from jsonschema import ValidationError
+from flask import request, g
 
-from openapi_server import encoder
+from openapi_server import encoder, openapi_spec
 
 
 def validate_schema(self, data, url):
@@ -50,6 +51,11 @@ if 'GAE_INSTANCE' in os.environ:
     CORS(app.app, origins=config.ORIGINS)
 else:
     CORS(app.app)
+
+
+@app.app.before_request
+def before_request_func():
+    g.db_type, g.db_name = openapi_spec.get_database_info(request)
 
 
 @app.app.after_request

@@ -1,4 +1,4 @@
-from flask import jsonify
+from flask import g, jsonify, make_response
 
 
 def generic_get_columns():  # noqa: E501
@@ -27,6 +27,9 @@ def generic_get_multiple():  # noqa: E501
     Returns a list of entities based on a kind # noqa: E501
 
     """
+    if not g.db_type or not g.db_name:
+        return make_response(jsonify("No database information available"), 400)
+
     return jsonify([
         {
             "id": "a0e7fd7e-7134-46da-b6be-f152cff23da5",
@@ -46,6 +49,9 @@ def generic_get_single(unique_id):  # noqa: E501
     Returns an entity based on a kind # noqa: E501
 
     """
+    if not g.db_type or not g.db_name:
+        return make_response(jsonify("No database information available"), 400)
+
     return jsonify({
         "id": "a0e7fd7e-7134-46da-b6be-f152cff23da5",
         "firstname": "Izzy",
@@ -59,6 +65,9 @@ def generic_post_single():  # noqa: E501
     Creates an entity based on a kind  # noqa: E501
 
     """
+    if not g.db_type or not g.db_name:
+        return make_response(jsonify("No database information available"), 400)
+
     return jsonify({
         "id": "a0e7fd7e-7134-46da-b6be-f152cff23da5",
         "firstname": "Izzy",
@@ -72,6 +81,9 @@ def generic_put_single(unique_id):  # noqa: E501
     Updates an entity based on a kind  # noqa: E501
 
     """
+    if not g.db_type or not g.db_name:
+        return make_response(jsonify("No database information available"), 400)
+
     return jsonify({
         "id": "a0e7fd7e-7134-46da-b6be-f152cff23da5",
         "firstname": "Izzy",
