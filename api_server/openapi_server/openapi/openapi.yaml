@@ -14,6 +14,38 @@ info:
 servers:
   - url: /
 paths:
+  /column-defs:
+    get:
+      description: Returns column definitions
+      operationId: generic_get_columns
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ColumnDefs'
+          description: Returns column definitions
+        "204":
+          description: No Content
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+          description: Bad Request
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+          description: No authorization token provided
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+          description: Provided token doesn't have the required scope
+      x-openapi-router-controller: openapi_server.controllers.default_controller
   /employee/{unique_id}:
     get:
       description: Returns an employee
@@ -217,6 +249,19 @@ components:
             $ref: '#/components/schemas/Response'
       description: Resource Not Found
   schemas:
+    ColumnDefs:
+      description: Column definition
+      example:
+        - title: Firstname
+          type: string
+        - title: Lastname
+          type: string
+      properties:
+        title:
+          type: string
+        type:
+          type: string
+      type: object
     Employees:
       description: Collection of Employees
       example:

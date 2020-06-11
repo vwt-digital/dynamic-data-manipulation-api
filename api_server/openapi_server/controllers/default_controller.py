@@ -4,6 +4,15 @@ import six
 from openapi_server import util
 
 
+def generic_get_columns():  # noqa: E501
+    """generic_get_columns
+
+    Returns column definitions # noqa: E501
+
+    """
+    return 'do some magic!'
+
+
 def generic_get_multiple():  # noqa: E501
     """generic_get_multiple
 
