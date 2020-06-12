@@ -1,91 +1,73 @@
 from flask import g, jsonify, make_response
 
 
+def check_database_configuration():
+    if 'db_client' not in g or 'db_kind' not in g or 'db_keys' not in g:
+        return make_response(jsonify("Database information insufficient"), 400)
+
+
 def generic_get_columns():  # noqa: E501
-    """generic_get_columns
+    """Returns column definitions
 
-    Returns column definitions # noqa: E501
-
+    :rtype: array
     """
-    return jsonify([
-        {
-            'title': 'id',
-            'type': 'string'
-        }, {
-            'title': 'firstname',
-            'type': 'string'
-        }, {
-            'title': 'lastname',
-            'type': 'string'
-        }
-    ])
+    return jsonify(g.db_keys)
 
 
 def generic_get_multiple():  # noqa: E501
-    """generic_get_multiple
+    """Returns a array of entities
 
-    Returns a list of entities based on a kind # noqa: E501
-
+    :rtype: array
     """
-    if not g.db_name:
-        return make_response(jsonify("No database information available"), 400)
+    db_existence = check_database_configuration()
+    if db_existence:
+        return db_existence
 
-    return jsonify([
-        {
-            "id": "a0e7fd7e-7134-46da-b6be-f152cff23da5",
-            "firstname": "Izzy",
-            "lastname": "Van isteren"
-        }, {
-            "id": "a0e7fd7e-7134-46da-b6be-f152cff23da5",
-            "firstname": "Peter",
-            "lastname": "Celie"
-        }
-    ])
+    return g.db_client.get_multiple(kind=g.db_kind, keys=g.db_keys)
 
 
 def generic_get_single(unique_id):  # noqa: E501
-    """generic_get_single
+    """Returns an entity
 
-    Returns an entity based on a kind # noqa: E501
+    :param unique_id: A unique identifier
+    :type unique_id: str
 
+    :rtype: dict
     """
-    if not g.db_name:
-        return make_response(jsonify("No database information available"), 400)
+    db_existence = check_database_configuration()
+    if db_existence:
+        return db_existence
 
-    return jsonify({
-        "id": "a0e7fd7e-7134-46da-b6be-f152cff23da5",
-        "firstname": "Izzy",
-        "lastname": "Van isteren"
-    })
+    return g.db_client.get_single(unique_id=unique_id, kind=g.db_kind, keys=g.db_keys)
 
 
-def generic_post_single():  # noqa: E501
-    """generic_post_single
+def generic_post_single(body):  # noqa: E501
+    """Creates an entity
 
-    Creates an entity based on a kind  # noqa: E501
+    :param body:
+    :type body: dict
 
+    :rtype: dict
     """
-    if not g.db_name:
-        return make_response(jsonify("No database information available"), 400)
+    db_existence = check_database_configuration()
+    if db_existence:
+        return db_existence
 
-    return jsonify({
-        "id": "a0e7fd7e-7134-46da-b6be-f152cff23da5",
-        "firstname": "Izzy",
-        "lastname": "Van isteren"
-    })
+    return g.db_client.post_single(body=body, kind=g.db_kind, keys=g.db_keys)
 
 
-def generic_put_single(unique_id):  # noqa: E501
-    """generic_put_single
+def generic_put_single(unique_id, body):  # noqa: E501
+    """Updates an entity
 
-    Updates an entity based on a kind  # noqa: E501
+    :param unique_id: A unique identifier
+    :type unique_id: str
+    :param body:
+    :type body: dict
 
+    :rtype: dict
     """
-    if not g.db_name:
-        return make_response(jsonify("No database information available"), 400)
+    db_existence = check_database_configuration()
+    if db_existence:
+        return db_existence
 
-    return jsonify({
-        "id": "a0e7fd7e-7134-46da-b6be-f152cff23da5",
-        "firstname": "Izzy",
-        "lastname": "Van isteren"
-    })
+    return g.db_client.put_single(unique_id=unique_id, body=body, kind=g.db_kind, keys=g.db_keys)

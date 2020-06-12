@@ -74,6 +74,24 @@ paths:
       x-openapi-router-controller: openapi_server.controllers.default_controller
 ~~~
 
+#### Database reference
+To connect the endpoints to specific database kinds, the custom [extension](https://swagger.io/docs/specification/openapi-extensions) 
+`x-database-name` must be used to ensure each path has it's database kind. The extension for this API can only be added to 
+individual paths, as shown below.
+~~~yaml
+paths:
+    /pets:
+      get:
+          description: Get a list of all pets
+          operationId: generic_get_multiple
+          x-openapi-router-controller: openapi_server.controllers.default_controller
+      post:
+        description: Create a new pet
+        operationId: generic_post_single
+        x-openapi-router-controller: openapi_server.controllers.default_controller
+      x-database-name: Pets
+~~~ 
+
 #### Schemas
 A big part of the OpenAPI specification are the schemas that can be defined. These schemas are used to validate all incoming information.
 and to return the correct information from the database. OpenAPI requires to define a schema on each path's method to ensure this

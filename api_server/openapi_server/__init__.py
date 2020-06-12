@@ -13,6 +13,8 @@ from flask_cors import CORS
 from jsonschema import ValidationError
 from flask import request, g
 
+from openapi_server.controllers.database_controller import Datastore
+
 from openapi_server import encoder, openapi_spec
 
 
@@ -55,7 +57,12 @@ else:
 
 @app.app.before_request
 def before_request_func():
-    g.db_name = openapi_spec.get_database_info(request)
+    g.db_kind, g.db_keys = openapi_spec.RouteInfo(request).get_info()
+    g.db_client = None
+
+    if hasattr(config, 'DATABASE_TYPE'):
+        if config.DATABASE_TYPE == 'datastore':
+            g.db_client = Datastore()
 
 
 @app.app.after_request
