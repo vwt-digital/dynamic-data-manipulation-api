@@ -117,10 +117,10 @@ components:
       example:
         - id: a0e7fd7e-7134-46da-b6be-f152cff23da5
           name: Izzy
-          breed: bulldog
+          breed: Bulldog
         - id: a0e7fd7e-7134-46da-b6be-f152cff23da5
           name: Peter
-          breed: labrador
+          breed: Labrador
       properties:
         pets:
           items:
@@ -132,7 +132,7 @@ components:
       example:
         id: a0e7fd7e-7134-46da-b6be-f152cff23da5
         name: Izzy
-        breed: bulldog
+        breed: Bulldog
       properties:
         id:
           format: uuid

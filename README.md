@@ -89,7 +89,7 @@ components:
       example:
         id: a0e7fd7e-7134-46da-b6be-f152cff23da5
         name: Doggy
-        breed: Buldog
+        breed: Bulldog
       properties:
         id:
           format: uuid
@@ -106,15 +106,15 @@ To use this schema as a input validator, define this as the request body`:
 ~~~yaml
 paths:
   /pets/{unique_id}:
-    post:
-      description: Creates a new pet
-      operationId: generic_post_single
+    put:
+      description: Updates an existing pet
+      operationId: generic_put_single
       requestBody:
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/Pet'
-        description: Pet to add
+        description: Pet to update
         required: true
 ~~~
 
@@ -178,7 +178,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Pet'
+              $ref: '#/components/schemas/PetToAdd'
         description: Pet to add
         required: true
       x-openapi-router-controller: openapi_server.controllers.default_controller
@@ -193,7 +193,7 @@ the [OpenAPI generator](https://github.com/OpenAPITools/openapi-generator).
 
 To generate these models for your local environment use the shell script provisioned within the API: 
 ~~~bash
-./generate-models
+./generate-models.sh
 ~~~
 
 To generate this model within a GCP Cloud Build, use the build step defined below: 
