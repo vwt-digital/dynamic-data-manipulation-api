@@ -66,6 +66,7 @@ paths:
       x-openapi-router-controller: openapi_server.controllers.default_controller
       security:
         - oauth2: [customscope.edit]
+    x-database-name: Pets
   /pets:
     get:
       description: Returns a list of pets
@@ -100,6 +101,7 @@ paths:
       x-openapi-router-controller: openapi_server.controllers.default_controller
       security:
         - oauth2: [customscope.edit]
+    x-database-name: Pets
 components:
   parameters:
     UniqueId:

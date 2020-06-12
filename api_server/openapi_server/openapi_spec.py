@@ -13,6 +13,6 @@ def get_database_info(request):
     spec = get_specification()
 
     if route in spec.get('paths'):
-        return spec['paths'][route].get('x-database-type'), spec['paths'][route].get('x-database-name')
+        return spec['paths'][route].get('x-database-name', None)
 
-    return None, None
+    return None

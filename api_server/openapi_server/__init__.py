@@ -55,7 +55,7 @@ else:
 
 @app.app.before_request
 def before_request_func():
-    g.db_type, g.db_name = openapi_spec.get_database_info(request)
+    g.db_name = openapi_spec.get_database_info(request)
 
 
 @app.app.after_request
