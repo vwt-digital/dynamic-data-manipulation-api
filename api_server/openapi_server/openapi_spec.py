@@ -18,8 +18,8 @@ def get_from_dict(data_dict, map_list):
     return reduce(operator.getitem, map_list, data_dict)
 
 
-def get_route_reference(route_method):
-    if 'responses' in route_method:
+def get_route_reference(route_method, request_method):
+    if request_method in ['get'] and 'responses' in route_method:
         for code in ['200', '201', '202', '203', '204']:
             if code in route_method['responses']:
                 try:
@@ -29,6 +29,14 @@ def get_route_reference(route_method):
                     pass
                 else:
                     return route_scheme_ref
+    elif request_method in ['put', 'post', 'patch'] and 'requestBody' in route_method:
+        try:
+            route_scheme_ref = get_from_dict(
+                route_method['requestBody'], ['content', 'application/json', 'schema', '$ref'])
+        except KeyError:
+            pass
+        else:
+            return route_scheme_ref
     return None
 
 
@@ -57,8 +65,9 @@ def get_schema_properties(specification, reference):
 
 def get_route_schema(request, spec, path_schema):
     if path_schema:
-        route_method = path_schema.get(str(request.method).lower(), None)
-        route_reference = get_route_reference(route_method)
+        request_method = str(request.method).lower()
+        route_reference = get_route_reference(path_schema.get(request_method, None), request_method)
+        print(route_reference)
         route_properties = get_schema_properties(spec, route_reference)
 
         if len(route_properties) > 0:

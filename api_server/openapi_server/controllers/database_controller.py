@@ -1,16 +1,17 @@
-import uuid
-
 from flask import make_response, jsonify
 from google.cloud import datastore
 
 
-def create_entity_object(keys, entity):
+def create_entity_object(keys, entity, method):
     entity_to_return = {}
     for key in keys:
         if key == 'id':
             entity_to_return[key] = entity.key.id_or_name
         else:
-            entity_to_return[key] = entity.get(key, None)
+            if method == 'get':
+                entity_to_return[key] = entity.get(key, None)
+            elif key in entity:
+                entity_to_return[key] = entity[key]
 
     return entity_to_return
 
@@ -20,11 +21,11 @@ def create_response(keys, data):
         return_object = {}
         for key in keys:
             if type(keys[key]) == dict:
-                return_object[key] = [create_entity_object(keys[key], entity) for entity in data]
+                return_object[key] = [create_entity_object(keys[key], entity, 'get') for entity in data]
 
         return return_object
 
-    return create_entity_object(keys, data)
+    return create_entity_object(keys, data, 'get')
 
 
 class Datastore:
@@ -71,7 +72,7 @@ class Datastore:
         entity = self.db_client.get(entity_key)
 
         if entity is not None:
-            entity.update(create_entity_object(keys, entity))
+            entity.update(create_entity_object(keys, body, 'put'))
             self.db_client.put(entity)
             return make_response(jsonify(unique_id), 201)
 
@@ -90,10 +91,10 @@ class Datastore:
         :rtype: str
         """
 
-        entity_key = self.db_client.key(kind, str(uuid.uuid4()))
-        entity = self.db_client.get(entity_key)
+        entity_key = self.db_client.key(kind)
+        entity = datastore.Entity(key=entity_key)
 
-        entity.update(create_entity_object(keys, entity))
+        entity.update(create_entity_object(keys, body, 'post'))
         self.db_client.put(entity)
 
         return make_response(jsonify(entity.key.id_or_name), 201)
