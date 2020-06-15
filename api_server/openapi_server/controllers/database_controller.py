@@ -15,6 +15,18 @@ def create_entity_object(keys, entity):
     return entity_to_return
 
 
+def create_response(keys, data):
+    if type(data) == list:
+        return_object = {}
+        for key in keys:
+            if type(keys[key]) == dict:
+                return_object[key] = [create_entity_object(keys[key], entity) for entity in data]
+
+        return return_object
+
+    return create_entity_object(keys, data)
+
+
 class Datastore:
     def __init__(self):
         self.db_client = datastore.Client()
@@ -36,7 +48,7 @@ class Datastore:
         entity = self.db_client.get(entity_key)
 
         if entity is not None:
-            return create_entity_object(keys, entity)
+            return create_response(keys, entity)
 
         return make_response('Not found', 404)
 
@@ -101,7 +113,6 @@ class Datastore:
         entities = list(query.fetch())
 
         if entities:
-            result = [create_entity_object(keys, entity) for entity in entities]
-            return result
+            return create_response(keys, entities)
 
         return make_response(jsonify([]), 204)

@@ -2,7 +2,8 @@ from flask import g, jsonify, make_response
 
 
 def check_database_configuration():
-    if 'db_client' not in g or 'db_kind' not in g or 'db_keys' not in g:
+    if 'db_client' not in g or 'db_kind' not in g or 'db_keys' not in g or \
+            g.db_client is None or g.db_kind is None or g.db_keys is None:
         return make_response(jsonify("Database information insufficient"), 400)
 
 
