@@ -14,6 +14,10 @@ def get_specification():
     return spec
 
 
+def get_from_dict(data_dict, map_list):
+    return reduce(operator.getitem, map_list, data_dict)
+
+
 def get_route_reference(route_method):
     if 'responses' in route_method:
         for code in ['200', '201', '202', '203', '204']:
@@ -51,34 +55,28 @@ def get_schema_properties(specification, reference):
     return None
 
 
-def get_from_dict(data_dict, map_list):
-    return reduce(operator.getitem, map_list, data_dict)
+def get_route_schema(request, spec, path_schema):
+    if path_schema:
+        route_method = path_schema.get(str(request.method).lower(), None)
+        route_reference = get_route_reference(route_method)
+        route_properties = get_schema_properties(spec, route_reference)
+
+        if len(route_properties) > 0:
+            return route_properties
+
+    return None
 
 
-class RouteInfo:
-    def __init__(self, request):
-        self.spec = get_specification()
-        self.request = request
-        self.req_route = self.tranfsorm_url_rule(request.url_rule)
-        self.path_schema = self.spec['paths'].get(self.req_route, None)
+def transform_url_rule(url_rule):
+    new_url_rule = str(url_rule).replace('int:', '')
+    new_url_rule = str(new_url_rule).translate(str.maketrans('<>', '{}'))
 
-    def tranfsorm_url_rule(self, url_rule):
-        new_url_rule = str(url_rule).replace('int:', '')
-        new_url_rule = str(new_url_rule).translate(str.maketrans('<>', '{}'))
+    return new_url_rule
 
-        return new_url_rule
 
-    def get_info(self):
-        return self.path_schema.get('x-database-name', None) if self.path_schema else None,\
-               self.get_route_schema()
+def get_database_info(request):
+    spec = get_specification()
+    path_schema = spec.get('paths', {}).get(transform_url_rule(request.url_rule), None)
 
-    def get_route_schema(self):  # TODO: Create properties for schema referencing other schema
-        if self.path_schema:
-            route_method = self.path_schema.get(str(self.request.method).lower(), None)
-            route_reference = get_route_reference(route_method)
-            route_properties = get_schema_properties(self.spec, route_reference)
-
-            if len(route_properties) > 0:
-                return route_properties
-
-        return None
+    return path_schema.get('x-database-name', None) if path_schema else None, get_route_schema(
+        request, spec, path_schema)

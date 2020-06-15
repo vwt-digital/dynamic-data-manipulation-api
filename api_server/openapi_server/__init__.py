@@ -57,7 +57,7 @@ else:
 
 @app.app.before_request
 def before_request_func():
-    g.db_kind, g.db_keys = openapi_spec.RouteInfo(request).get_info()
+    g.db_kind, g.db_keys = openapi_spec.get_database_info(request)
     g.db_client = None
 
     if hasattr(config, 'DATABASE_TYPE'):
