@@ -26,7 +26,16 @@ OAUTH_EXPECTED_AUDIENCE = [string] The Azure AD audience needed for access
 OAUTH_EXPECTED_ISSUER = [string] The Azure AD issuer ID
 OAUTH_JWKS_URL = [string] The Azure AD URL for JWK info
 ORIGINS = [required][list] A list containing allowed origins for access
+DATABASE_TYPE = [required][string] The identifier for the database to be used
 ~~~ 
+
+#### Database Type
+One of the configuration variables to be specified is the `DATABASE_TYPE`. This will specify the database the API will use to add, retrieve and edit
+entities. Currently the API supports the following database types:
+- `datastore`: [Google Cloud Datastore](https://cloud.google.com/datastore/docs)
+- `firestore`: [Google Cloud Firestore](https://cloud.google.com/firestore/docs)
+
+When no database type is specified the function will return a `500` code.
 
 ### OpenAPI Specification
 A big part of this API is the specification based on [OpenAPI](https://swagger.io/specification/). To create the correct endpoints and retrieve 

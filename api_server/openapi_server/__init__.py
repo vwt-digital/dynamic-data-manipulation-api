@@ -14,6 +14,7 @@ from jsonschema import ValidationError
 from flask import request, current_app
 
 from openapi_server.datastoredatabase import DatastoreDatabase
+from openapi_server.firestoredatabase import FirestoreDatabase
 
 from openapi_server import encoder, openapi_spec
 
@@ -63,6 +64,8 @@ with app.app.app_context():
     if hasattr(config, 'DATABASE_TYPE'):
         if config.DATABASE_TYPE == 'datastore':
             current_app.db_client = DatastoreDatabase()
+        elif config.DATABASE_TYPE == 'firestore':
+            current_app.db_client = FirestoreDatabase()
 
 
 @app.app.before_request
