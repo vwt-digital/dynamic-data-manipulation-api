@@ -7,14 +7,6 @@ def check_database_configuration():
         return make_response(jsonify("Database information insufficient"), 400)
 
 
-def generic_get_columns():  # noqa: E501
-    """Returns column definitions
-
-    :rtype: array
-    """
-    return jsonify(g.db_keys)
-
-
 def generic_get_multiple():  # noqa: E501
     """Returns a array of entities
 
