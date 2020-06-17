@@ -1,4 +1,3 @@
-from flask import make_response, jsonify
 from google.cloud import datastore
 from openapi_server.abstractdatabase import DatabaseInterface, create_entity_object, create_response
 
@@ -27,7 +26,7 @@ class DatastoreDatabase(DatabaseInterface):
         if entity is not None:
             return create_response(keys, entity)
 
-        return make_response('Not found', 404)
+        return None
 
     def put_single(self, unique_id, body, kind, keys):
         """Updates an entity
@@ -50,9 +49,9 @@ class DatastoreDatabase(DatabaseInterface):
         if entity is not None:
             entity.update(create_entity_object(keys, body, 'put'))
             self.db_client.put(entity)
-            return make_response(jsonify(unique_id), 201)
+            return unique_id
 
-        return make_response('Not found', 404)
+        return None
 
     def post_single(self, body, kind, keys):
         """Creates an entity
@@ -73,7 +72,7 @@ class DatastoreDatabase(DatabaseInterface):
         entity.update(create_entity_object(keys, body, 'post'))
         self.db_client.put(entity)
 
-        return make_response(jsonify(entity.key.id_or_name), 201)
+        return entity.key.id_or_name
 
     def get_multiple(self, kind, keys):
         """Returns all entities as a list of dicts
@@ -92,4 +91,4 @@ class DatastoreDatabase(DatabaseInterface):
         if entities:
             return create_response(keys, entities)
 
-        return make_response(jsonify([]), 204)
+        return None

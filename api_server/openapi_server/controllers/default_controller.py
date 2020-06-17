@@ -15,7 +15,12 @@ def generic_get_multiple():  # noqa: E501
     if db_existence:
         return db_existence
 
-    return current_app.db_client.get_multiple(kind=current_app.db_table_name, keys=current_app.db_keys)
+    db_response = current_app.db_client.get_multiple(kind=current_app.db_table_name, keys=current_app.db_keys)
+
+    if db_response:
+        return db_response
+
+    return make_response(jsonify([]), 204)
 
 
 def generic_get_single(unique_id):  # noqa: E501
@@ -30,8 +35,13 @@ def generic_get_single(unique_id):  # noqa: E501
     if db_existence:
         return db_existence
 
-    return current_app.db_client.get_single(
+    db_response = current_app.db_client.get_single(
         unique_id=unique_id, kind=current_app.db_table_name, keys=current_app.db_keys)
+
+    if db_response:
+        return db_response
+
+    return make_response('Not found', 404)
 
 
 def generic_post_single(body):  # noqa: E501
@@ -46,7 +56,12 @@ def generic_post_single(body):  # noqa: E501
     if db_existence:
         return db_existence
 
-    return current_app.db_client.post_single(body=body, kind=current_app.db_table_name, keys=current_app.db_keys)
+    db_response = current_app.db_client.post_single(body=body, kind=current_app.db_table_name, keys=current_app.db_keys)
+
+    if db_response:
+        return make_response(jsonify(db_response), 201)
+
+    return make_response('Something went wrong', 400)
 
 
 def generic_put_single(unique_id, body):  # noqa: E501
@@ -63,8 +78,13 @@ def generic_put_single(unique_id, body):  # noqa: E501
     if db_existence:
         return db_existence
 
-    return current_app.db_client.put_single(
+    db_response = current_app.db_client.put_single(
         unique_id=unique_id, body=body, kind=current_app.db_table_name, keys=current_app.db_keys)
+
+    if db_response:
+        return make_response(jsonify(db_response), 201)
+
+    return make_response('Not found', 404)
 
 
 def generic_get_multiple2():  # noqa: E501
