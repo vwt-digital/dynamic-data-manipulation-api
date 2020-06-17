@@ -1,10 +1,9 @@
-from flask import g, jsonify, make_response
+from flask import current_app, jsonify, make_response
 
 
 def check_database_configuration():
-    if 'db_client' not in g or 'db_kind' not in g or 'db_keys' not in g or \
-            g.db_client is None or g.db_kind is None or g.db_keys is None:
-        return make_response(jsonify("Database information insufficient"), 400)
+    if current_app.db_client is None or current_app.db_table_name is None or current_app.db_keys is None:
+        return make_response(jsonify("Database information insufficient"), 500)
 
 
 def generic_get_multiple():  # noqa: E501
@@ -16,7 +15,7 @@ def generic_get_multiple():  # noqa: E501
     if db_existence:
         return db_existence
 
-    return g.db_client.get_multiple(kind=g.db_kind, keys=g.db_keys)
+    return current_app.db_client.get_multiple(kind=current_app.db_table_name, keys=current_app.db_keys)
 
 
 def generic_get_single(unique_id):  # noqa: E501
@@ -31,7 +30,8 @@ def generic_get_single(unique_id):  # noqa: E501
     if db_existence:
         return db_existence
 
-    return g.db_client.get_single(unique_id=unique_id, kind=g.db_kind, keys=g.db_keys)
+    return current_app.db_client.get_single(
+        unique_id=unique_id, kind=current_app.db_table_name, keys=current_app.db_keys)
 
 
 def generic_post_single(body):  # noqa: E501
@@ -46,7 +46,7 @@ def generic_post_single(body):  # noqa: E501
     if db_existence:
         return db_existence
 
-    return g.db_client.post_single(body=body, kind=g.db_kind, keys=g.db_keys)
+    return current_app.db_client.post_single(body=body, kind=current_app.db_table_name, keys=current_app.db_keys)
 
 
 def generic_put_single(unique_id, body):  # noqa: E501
@@ -63,7 +63,8 @@ def generic_put_single(unique_id, body):  # noqa: E501
     if db_existence:
         return db_existence
 
-    return g.db_client.put_single(unique_id=unique_id, body=body, kind=g.db_kind, keys=g.db_keys)
+    return current_app.db_client.put_single(
+        unique_id=unique_id, body=body, kind=current_app.db_table_name, keys=current_app.db_keys)
 
 
 def generic_get_multiple2():  # noqa: E501

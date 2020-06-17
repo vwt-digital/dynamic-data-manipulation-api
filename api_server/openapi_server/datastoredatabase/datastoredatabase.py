@@ -1,34 +1,10 @@
 from flask import make_response, jsonify
 from google.cloud import datastore
+from openapi_server.abstractdatabase import DatabaseInterface, create_entity_object, create_response
 
 
-def create_entity_object(keys, entity, method):
-    entity_to_return = {}
-    for key in keys:
-        if key == 'id':
-            entity_to_return[key] = entity.key.id_or_name
-        else:
-            if method == 'get':
-                entity_to_return[key] = entity.get(key, None)
-            elif key in entity:
-                entity_to_return[key] = entity[key]
+class DatastoreDatabase(DatabaseInterface):
 
-    return entity_to_return
-
-
-def create_response(keys, data):
-    if type(data) == list:
-        return_object = {}
-        for key in keys:
-            if type(keys[key]) == dict:
-                return_object[key] = [create_entity_object(keys[key], entity, 'get') for entity in data]
-
-        return return_object
-
-    return create_entity_object(keys, data, 'get')
-
-
-class Datastore:
     def __init__(self):
         self.db_client = datastore.Client()
 

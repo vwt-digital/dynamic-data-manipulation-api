@@ -11,9 +11,9 @@ from connexion.lifecycle import ConnexionResponse
 from connexion.utils import is_null
 from flask_cors import CORS
 from jsonschema import ValidationError
-from flask import request, g
+from flask import request, current_app
 
-from openapi_server.controllers.database_controller import Datastore
+from openapi_server.datastoredatabase import DatastoreDatabase
 
 from openapi_server import encoder, openapi_spec
 
@@ -54,15 +54,20 @@ if 'GAE_INSTANCE' in os.environ:
 else:
     CORS(app.app)
 
-
-@app.app.before_request
-def before_request_func():
-    g.db_kind, g.db_keys = openapi_spec.get_database_info(request)
-    g.db_client = None
+with app.app.app_context():
+    current_app.__pii_filter_def__ = None
+    current_app.db_client = None
+    current_app.db_table_name = None
+    current_app.db_keys = None
 
     if hasattr(config, 'DATABASE_TYPE'):
         if config.DATABASE_TYPE == 'datastore':
-            g.db_client = Datastore()
+            current_app.db_client = DatastoreDatabase()
+
+
+@app.app.before_request
+def before_request_func():
+    current_app.db_table_name, current_app.db_keys = openapi_spec.get_database_info(request)
 
 
 @app.app.after_request
