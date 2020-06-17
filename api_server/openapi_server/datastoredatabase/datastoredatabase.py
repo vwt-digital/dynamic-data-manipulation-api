@@ -1,5 +1,5 @@
 from google.cloud import datastore
-from openapi_server.abstractdatabase import DatabaseInterface, create_entity_object, create_response
+from openapi_server.abstractdatabase import DatabaseInterface
 
 
 class DatastoreDatabase(DatabaseInterface):
@@ -11,7 +11,7 @@ class DatastoreDatabase(DatabaseInterface):
         """Returns an entity as a dict
 
         :param unique_id: A unique identifier
-        :type unique_id: str
+        :type unique_id: str | int
         :param kind: Database kind of entity
         :type kind: str
         :param keys: List of entity keys
@@ -32,7 +32,7 @@ class DatastoreDatabase(DatabaseInterface):
         """Updates an entity
 
         :param unique_id: A unique identifier
-        :type unique_id: str
+        :type unique_id: str | int
         :param body:
         :type body: dict
         :param kind: Database kind of entity
@@ -92,3 +92,29 @@ class DatastoreDatabase(DatabaseInterface):
             return create_response(keys, entities)
 
         return None
+
+
+def create_entity_object(keys, entity, method):
+    entity_to_return = {}
+    for key in keys:
+        if key == 'id':
+            entity_to_return[key] = entity.key.id_or_name
+        else:
+            if method == 'get':
+                entity_to_return[key] = entity.get(key, None)
+            elif key in entity:
+                entity_to_return[key] = entity[key]
+
+    return entity_to_return
+
+
+def create_response(keys, data):
+    if type(data) == list:
+        return_object = {}
+        for key in keys:
+            if type(keys[key]) == dict:
+                return_object[key] = [create_entity_object(keys[key], entity, 'get') for entity in data]
+
+        return return_object
+
+    return create_entity_object(keys, data, 'get')
