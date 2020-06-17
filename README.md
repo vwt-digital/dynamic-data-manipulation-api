@@ -76,7 +76,7 @@ paths:
 
 #### Database reference
 To connect the endpoints to specific database kinds, the custom [extension](https://swagger.io/docs/specification/openapi-extensions) 
-`x-database-name` must be used to ensure each path has it's database kind. The extension for this API can only be added to 
+`x-db-table-name` must be used to ensure each path has it's database table name. The extension for this API can only be added to 
 individual paths, as shown below.
 ~~~yaml
 paths:
@@ -89,7 +89,7 @@ paths:
         description: Create a new pet
         operationId: generic_post_single
         x-openapi-router-controller: openapi_server.controllers.default_controller
-      x-database-name: Pets
+      x-db-table-name: Pets
 ~~~ 
 
 #### Schemas

@@ -67,7 +67,6 @@ def get_route_schema(request, spec, path_schema):
     if path_schema:
         request_method = str(request.method).lower()
         route_reference = get_route_reference(path_schema.get(request_method, None), request_method)
-        print(route_reference)
         route_properties = get_schema_properties(spec, route_reference)
 
         if len(route_properties) > 0:
@@ -87,5 +86,5 @@ def get_database_info(request):
     spec = get_specification()
     path_schema = spec.get('paths', {}).get(transform_url_rule(request.url_rule), None)
 
-    return path_schema.get('x-database-name', None) if path_schema else None, get_route_schema(
+    return path_schema.get('x-db-table-name', None) if path_schema else None, get_route_schema(
         request, spec, path_schema)
