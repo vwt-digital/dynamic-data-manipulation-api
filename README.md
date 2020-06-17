@@ -52,6 +52,12 @@ paths:
       x-openapi-router-controller: openapi_server.controllers.default_controller
 ~~~
 
+Because OpenAPI requires the specification to have unique `operationId`'s, this API has multiple versions of the methods described above.
+To add two paths with both the posibility to post a single entity, the definitions `generic_post_single` and `generic_post_single2` can be used.
+Both these operations execute the same function but have unique identifiers.
+
+_For each definition are three implementations (`generic_post_single`, `generic_post_single2` and `generic_post_single3`)_
+
 #### Path parameter
 To create an endpoint where a single entity can be retrieved a path parameter has to be defined to pass a unique identifier.
 To ensure multiple endpoints can use the same operations the distinct path parameter `unique_id` can be used for each path in need of a unique parameter.

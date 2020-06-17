@@ -64,3 +64,35 @@ def generic_put_single(unique_id, body):  # noqa: E501
         return db_existence
 
     return g.db_client.put_single(unique_id=unique_id, body=body, kind=g.db_kind, keys=g.db_keys)
+
+
+def generic_get_multiple2():  # noqa: E501
+    generic_get_multiple()
+
+
+def generic_get_multiple3():  # noqa: E501
+    generic_get_multiple()
+
+
+def generic_get_single2(unique_id):  # noqa: E501
+    generic_get_single(unique_id)
+
+
+def generic_get_single3(unique_id):  # noqa: E501
+    generic_get_single(unique_id)
+
+
+def generic_post_single2(body):  # noqa: E501
+    generic_post_single(body)
+
+
+def generic_post_single3(body):  # noqa: E501
+    generic_post_single(body)
+
+
+def generic_put_single2(unique_id, body):  # noqa: E501
+    generic_put_single(unique_id, body)
+
+
+def generic_put_single3(unique_id, body):  # noqa: E501
+    generic_put_single(unique_id, body)
