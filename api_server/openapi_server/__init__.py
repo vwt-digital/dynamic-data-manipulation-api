@@ -81,7 +81,7 @@ def add_header(response):
                                                   "img-src 'self' data:; font-src 'self' fonts.gstatic.com data:; " \
                                                   "style-src 'self' fonts.googleapis.com 'unsafe-inline'; " \
                                                   "style-src-elem 'self' fonts.googleapis.com 'unsafe-inline'; " \
-                                                  "connect-src 'self'; form-action 'none'; frame-src data:; " \
+                                                  "connect-src 'self' opensource.zalando.com; form-action 'none'; frame-src data:; " \
                                                   "frame-ancestors 'none'"
     response.headers['X-Frame-Options'] = "SAMEORIGIN"
     response.headers['X-Content-Type-Options'] = "nosniff"
