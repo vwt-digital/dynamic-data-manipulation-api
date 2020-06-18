@@ -69,7 +69,7 @@ def get_route_schema(request, spec, path_schema):
         route_reference = get_route_reference(path_schema.get(request_method, None), request_method)
         route_properties = get_schema_properties(spec, route_reference)
 
-        if len(route_properties) > 0:
+        if route_properties and len(route_properties) > 0:
             return route_properties
 
     return None
