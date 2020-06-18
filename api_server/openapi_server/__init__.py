@@ -50,7 +50,7 @@ app.app.json_encoder = encoder.JSONEncoder
 app.add_api('openapi.yaml',
             arguments={'title': 'Dynamic Data Manipulator API'},
             strict_validation=True)
-if 'GAE_INSTANCE' in os.environ:
+if 'GAE_INSTANCE' in os.environ or 'K_SERVICE' in os.environ:
     CORS(app.app, origins=config.ORIGINS)
 else:
     CORS(app.app)
