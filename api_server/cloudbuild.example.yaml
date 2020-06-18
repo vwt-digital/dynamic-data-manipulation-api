@@ -1,0 +1,55 @@
+---
+steps:
+  # Generate DDM API models from spec
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-ddm-openapi-models'
+    args:
+      - 'run'
+      - '--rm'
+      - '-v'
+      - '/workspace:/local'
+      - 'openapitools/openapi-generator-cli'
+      - 'generate'
+      - '-i'
+      - '/local/openapi_server/openapi/openapi.yaml'
+      - '-g'
+      - 'python-flask'
+      - '-o'
+      - '/local'
+      - '--global-property=models'
+    dir: 'dynamic-data-manipulation-api/api_server'
+
+  # Build DDM API container
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-ddm-container-image'
+    waitFor: ['build-ddm-openapi-models']
+    args:
+      - 'build'
+      - '-t'
+      - 'eu.gcr.io/${PROJECT_ID}/dynamic-data-manipulation-api'
+      - '-f'
+      - './Dockerfile'
+      - '.'
+    dir: 'dynamic-data-manipulation-api/api_server'
+
+  # Push DDM API container to Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-ddm-container-image'
+    waitFor: ['build-ddm-container-image']
+    args:
+      - 'push'
+      - 'eu.gcr.io/$PROJECT_ID/dynamic-data-manipulation-api'
+
+  # Deploy DDM API container to Cloud Run
+  - name: 'gcr.io/cloud-builders/gcloud'
+    id: 'deploy-ddm-container-image'
+    waitFor: ['push-ddm-container-image']
+    args:
+      - 'run'
+      - 'deploy'
+      - 'dynamic-data-manipulation-api'
+      - '--image=eu.gcr.io/$PROJECT_ID/dynamic-data-manipulation-api'
+      - '--region=europe-west1'
+      - '--allow-unauthenticated'
+      - '--platform=managed'
+      - '--memory=256M'

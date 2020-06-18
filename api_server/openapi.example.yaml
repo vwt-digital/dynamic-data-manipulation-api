@@ -1,0 +1,171 @@
+---
+openapi: 3.0.0
+info:
+  contact:
+    email: support@vwt.digital
+    name: Digital Ambition Team
+    url: https://vwt-digital.github.io/
+  description: Endpoint to dynamic manipulate data
+  license:
+    name: GNU GPLv3
+    url: https://www.gnu.org/licenses/gpl.txt
+  title: Dynamic Data Manipulation API
+  version: 1.0.0
+servers:
+  - url: /
+paths:
+  /pets/{unique_id}:
+    get:
+      description: Returns a pet
+      operationId: generic_get_single
+      parameters:
+        - explode: false
+          in: path
+          name: unique_id
+          required: true
+          schema:
+            format: uuid
+            type: string
+          style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+          description: Returns a pet
+      x-openapi-router-controller: openapi_server.controllers.default_controller
+      security:
+        - oauth2: [customscope.read]
+    put:
+      description: Updates a pet
+      operationId: generic_put_single
+      parameters:
+        - explode: false
+          in: path
+          name: unique_id
+          required: true
+          schema:
+            format: uuid
+            type: string
+          style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PetToAdd'
+        description: Pet to update
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+          description: succesfull PUT
+      x-openapi-router-controller: openapi_server.controllers.default_controller
+      security:
+        - oauth2: [customscope.edit]
+    x-db-table-name: Pets
+  /pets:
+    get:
+      description: Returns a list of pets
+      operationId: generic_get_multiple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pets'
+          description: Returns a list of pets
+      x-openapi-router-controller: openapi_server.controllers.default_controller
+      security:
+        - oauth2: [customscope.read]
+    post:
+      description: Creates a new pet
+      operationId: generic_post_single
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PetToAdd'
+        description: Pet to add
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+          description: succesfull post
+      x-openapi-router-controller: openapi_server.controllers.default_controller
+      security:
+        - oauth2: [customscope.edit]
+    x-db-table-name: Pets
+components:
+  parameters:
+    UniqueId:
+      explode: false
+      in: path
+      name: unique_id
+      required: true
+      schema:
+        format: uuid
+        type: string
+      style: simple
+  schemas:
+    Pets:
+      description: Collection of Pets
+      example:
+        - id: a0e7fd7e-7134-46da-b6be-f152cff23da5
+          name: Izzy
+          breed: Bulldog
+        - id: a0e7fd7e-7134-46da-b6be-f152cff23da5
+          name: Peter
+          breed: Labrador
+      properties:
+        pets:
+          items:
+            $ref: '#/components/schemas/Pet'
+          type: array
+      type: object
+    Pet:
+      description: Information about a pet
+      example:
+        id: a0e7fd7e-7134-46da-b6be-f152cff23da5
+        name: Izzy
+        breed: Bulldog
+      properties:
+        id:
+          format: uuid
+          type: string
+        name:
+          maxLength: 100
+          type: string
+        breed:
+          maxLength: 100
+          type: string
+    PetToAdd:
+      description: Information about a new peet
+      example:
+        name: Izzy
+        breed: bulldog
+      properties:
+        name:
+          maxLength: 100
+          type: string
+        breed:
+          maxLength: 100
+          type: string
+  securityschemas:
+    oauth2:
+      type: oauth2
+      description: This API uses OAuth 2 with the implicit grant flow.
+      flows:
+        implicit:
+          authorizationUrl: https://azuread.url/2.0/authorize
+          scopes:
+            customscope.read: View access to Dynamic Data Manipulation API
+            customescope.edit: Edit access to Dynamic Data Manipulation API
+      x-tokenInfoFunc: openapi_server.controllers.security_controller_.info_from_oAuth2
+      x-scopeValidateFunc: connexion.decorators.security.validate_scope
