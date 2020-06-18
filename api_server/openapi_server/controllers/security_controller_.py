@@ -1,8 +1,7 @@
 import config
-import logging
 from jwkaas import JWKaas
 
-from flask import g
+from flask import current_app
 
 my_jwkaas = None
 
@@ -27,7 +26,7 @@ def info_from_oAuth2(token):
     result = my_jwkaas.get_connexion_token_info(token)
 
     if result is not None:
-        g.user = result.get('upn', '')
-        g.token = result
+        current_app.user = result.get('upn', '')
+        current_app.token = result
 
     return result

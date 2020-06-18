@@ -21,13 +21,12 @@ Part of the configuration for this API is a `config.py` file containing some var
 authentication and database connections. To create a `config.py` file you can take a look at the [config.example.py](api_server/config.example.py) file.
 
 The available variables are:
-~~~text
-OAUTH_EXPECTED_AUDIENCE = [string] The Azure AD audience needed for access
-OAUTH_EXPECTED_ISSUER = [string] The Azure AD issuer ID
-OAUTH_JWKS_URL = [string] The Azure AD URL for JWK info
-ORIGINS = [required][list] A list containing allowed origins for access
-DATABASE_TYPE = [required][string] The identifier for the database to be used
-~~~ 
+- `OAUTH_EXPECTED_AUDIENCE`: `[string]` The Azure AD audience needed for access
+- `OAUTH_EXPECTED_ISSUER`: `[string]` The Azure AD issuer ID
+- `OAUTH_JWKS_URL`: `[string]` The Azure AD URL for JWK info
+- `ORIGINS`: `[required]` `[list]` A list containing allowed origins for access
+- `DATABASE_TYPE`: `[required]` `[string]` The identifier for the database to be used (see [Database Type](#database-type))
+- `AUDIT_LOGS_NAME`: `[string]` The identifier for the Database table where the audit logs will be inserted (see [Audit logging](#audit-logging))
 
 #### Database Type
 One of the configuration variables to be specified is the `DATABASE_TYPE`. This will specify the database the API will use to add, retrieve and edit
@@ -242,6 +241,15 @@ steps:
           -o /local \
           --global-property=models
 ~~~
+
+### Audit logging
+To track all changes that are made using the API some form of audit logging can be enabled. By declaring the 
+configuration variable `AUDIT_LOGS_NAME` the API will log each transaction into the Database. This will create a new
+table in the chosen database and will be filled with the following transaction information:
+- Date
+- User
+- Entity changes
+- Database table name
 
 ### Deploying to Google Cloud Platform
 To deploy the API to the Google Cloud Platform a couple of options are available.

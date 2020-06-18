@@ -4,6 +4,10 @@ from abc import ABC, abstractmethod
 class DatabaseInterface(ABC):
 
     @abstractmethod
+    def process_audit_logging(self, old_data, new_data):
+        pass
+
+    @abstractmethod
     def get_single(self, unique_id, kind, keys):
         pass
 

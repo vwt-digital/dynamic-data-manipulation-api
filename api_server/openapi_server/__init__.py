@@ -60,6 +60,8 @@ with app.app.app_context():
     current_app.db_client = None
     current_app.db_table_name = None
     current_app.db_keys = None
+    current_app.user = None
+    current_app.token = None
 
     if hasattr(config, 'DATABASE_TYPE'):
         if config.DATABASE_TYPE == 'datastore':
