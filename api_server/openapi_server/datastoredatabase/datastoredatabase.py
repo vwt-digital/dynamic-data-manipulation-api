@@ -29,9 +29,10 @@ class DatastoreDatabase(DatabaseInterface):
                 entity = datastore.Entity(key=key)
                 entity.update(
                     {
-                        "entity_id": new_data.key.id,
-                        "timestamp": datetime.datetime.utcnow().isoformat(timespec="seconds") + 'Z',
                         "attributes_changed": json.dumps(changed),
+                        "entity_id": new_data.key.id_or_name,
+                        "table_name": current_app.db_table_name,
+                        "timestamp": datetime.datetime.utcnow().isoformat(timespec="seconds") + 'Z',
                         "user": current_app.user if current_app.user is not None else request.remote_addr,
                     }
                 )

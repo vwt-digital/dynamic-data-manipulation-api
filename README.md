@@ -246,10 +246,11 @@ steps:
 To track all changes that are made using the API some form of audit logging can be enabled. By declaring the 
 configuration variable `AUDIT_LOGS_NAME` the API will log each transaction into the Database. This will create a new
 table in the chosen database and will be filled with the following transaction information:
-- Date
-- User
-- Entity changes
-- Database table name
+- Attributes changed
+- Entity ID
+- Table Name
+- Timestamp
+- User email or IP
 
 ### Deploying to Google Cloud Platform
 To deploy the API to the Google Cloud Platform a couple of options are available.

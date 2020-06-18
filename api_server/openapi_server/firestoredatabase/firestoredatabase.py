@@ -32,10 +32,11 @@ class FirestoreDatabase(DatabaseInterface):
                 if changed:
                     doc_ref = self.db_client.collection(config.AUDIT_LOGS_NAME).document()
                     doc_ref.set({
-                        "entity_id": entity_id,
-                        "timestamp": datetime.datetime.utcnow().isoformat(timespec="seconds") + 'Z',
                         "attributes_changed": json.dumps(changed),
-                        "user": current_app.user if current_app.user is not None else request.remote_addr,
+                        "entity_id": entity_id,
+                        "table_name": current_app.db_table_name,
+                        "timestamp": datetime.datetime.utcnow().isoformat(timespec="seconds") + 'Z',
+                        "user": current_app.user if current_app.user is not None else request.remote_addr
                     })
             except Exception as e:
                 logging.error(f"An exception occurred when audit logging changes for entity '{entity_id}': {str(e)}")
