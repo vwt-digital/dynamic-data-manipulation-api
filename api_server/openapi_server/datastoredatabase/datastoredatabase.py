@@ -30,7 +30,7 @@ class DatastoreDatabase(DatabaseInterface):
                 entity.update(
                     {
                         "attributes_changed": json.dumps(changed),
-                        "entity_id": new_data.key.id_or_name,
+                        "db_table_id": new_data.key.id_or_name,
                         "table_name": current_app.db_table_name,
                         "timestamp": datetime.datetime.utcnow().isoformat(timespec="seconds") + 'Z',
                         "user": current_app.user if current_app.user is not None else request.remote_addr,
@@ -38,11 +38,11 @@ class DatastoreDatabase(DatabaseInterface):
                 )
                 self.db_client.put(entity)
 
-    def get_single(self, unique_id, kind, keys):
+    def get_single(self, id, kind, keys):
         """Returns an entity as a dict
 
-        :param unique_id: A unique identifier
-        :type unique_id: str | int
+        :param id: A unique identifier
+        :type id: str | int
         :param kind: Database kind of entity
         :type kind: str
         :param keys: List of entity keys
@@ -51,7 +51,7 @@ class DatastoreDatabase(DatabaseInterface):
         :rtype: dict
         """
 
-        entity_key = self.db_client.key(kind, unique_id)
+        entity_key = self.db_client.key(kind, id)
         entity = self.db_client.get(entity_key)
 
         if entity is not None:
@@ -59,11 +59,11 @@ class DatastoreDatabase(DatabaseInterface):
 
         return None
 
-    def put_single(self, unique_id, body, kind, keys):
+    def put_single(self, id, body, kind, keys):
         """Updates an entity
 
-        :param unique_id: A unique identifier
-        :type unique_id: str | int
+        :param id: A unique identifier
+        :type id: str | int
         :param body:
         :type body: dict
         :param kind: Database kind of entity
@@ -74,7 +74,7 @@ class DatastoreDatabase(DatabaseInterface):
         :rtype: str
         """
 
-        entity_key = self.db_client.key(kind, unique_id)
+        entity_key = self.db_client.key(kind, id)
         entity = self.db_client.get(entity_key)
 
         if entity is not None:
@@ -83,7 +83,7 @@ class DatastoreDatabase(DatabaseInterface):
             self.db_client.put(entity)
 
             self.process_audit_logging(old_data=old_entity, new_data=entity)
-            return unique_id
+            return id
 
         return None
 
@@ -133,7 +133,7 @@ class DatastoreDatabase(DatabaseInterface):
 def create_entity_object(keys, entity, method):
     entity_to_return = {}
     for key in keys:
-        if key == 'id':
+        if key == current_app.db_table_id:
             entity_to_return[key] = entity.key.id_or_name
         else:
             if method == 'get':

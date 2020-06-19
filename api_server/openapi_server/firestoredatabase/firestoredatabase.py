@@ -42,11 +42,11 @@ class FirestoreDatabase(DatabaseInterface):
                 logging.error(f"An exception occurred when audit logging changes for entity '{entity_id}': {str(e)}")
                 pass
 
-    def get_single(self, unique_id, kind, keys):
+    def get_single(self, id, kind, keys):
         """Returns an entity as a dict
 
-        :param unique_id: A unique identifier
-        :type unique_id: str | int
+        :param id: A unique identifier
+        :type id: str | int
         :param kind: Database kind of entity
         :type kind: str
         :param keys: List of entity keys
@@ -55,7 +55,7 @@ class FirestoreDatabase(DatabaseInterface):
         :rtype: dict
         """
 
-        doc_ref = self.db_client.collection(kind).document(unique_id)
+        doc_ref = self.db_client.collection(kind).document(id)
         doc = doc_ref.get()
 
         if doc.exists:
@@ -63,11 +63,11 @@ class FirestoreDatabase(DatabaseInterface):
 
         return None
 
-    def put_single(self, unique_id, body, kind, keys):
+    def put_single(self, id, body, kind, keys):
         """Updates an entity
 
-        :param unique_id: A unique identifier
-        :type unique_id: str | int
+        :param id: A unique identifier
+        :type id: str | int
         :param body:
         :type body: dict
         :param kind: Database kind of entity
@@ -78,7 +78,7 @@ class FirestoreDatabase(DatabaseInterface):
         :rtype: str
         """
 
-        doc_ref = self.db_client.collection(kind).document(unique_id)
+        doc_ref = self.db_client.collection(kind).document(id)
         doc = doc_ref.get()
 
         if doc.exists:
@@ -135,7 +135,7 @@ class FirestoreDatabase(DatabaseInterface):
 def create_entity_object(keys, entity, method):
     entity_to_return = {}
     for key in keys:
-        if key == 'id':
+        if key == current_app.db_table_id:
             entity_to_return[key] = entity.id
         else:
             if method == 'get':

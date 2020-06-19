@@ -34,11 +34,9 @@ def validate_schema(self, data, url):
     try:
         self.validator.validate(data)
     except ValidationError as exception:
-        logging.error("{url} validation error: {error}".format(url=url,
-                                                               error=exception.message),
-                      extra={'validator': 'body'})
-        return problem(400, 'Bad Request', 'Some data is missing or incorrect',
-                       type='Validation')
+        logging.error(
+            "{url} validation error: {error}".format(url=url, error=exception.message), extra={'validator': 'body'})
+        return problem(400, 'Bad Request', 'Some data is missing or incorrect', type='Validation')
 
     return None
 
@@ -59,7 +57,9 @@ with app.app.app_context():
     current_app.__pii_filter_def__ = None
     current_app.db_client = None
     current_app.db_table_name = None
+    current_app.db_table_id = None
     current_app.db_keys = None
+    current_app.request_id = None
     current_app.user = None
     current_app.token = None
 
@@ -72,7 +72,8 @@ with app.app.app_context():
 
 @app.app.before_request
 def before_request_func():
-    current_app.db_table_name, current_app.db_keys = openapi_spec.get_database_info(request)
+    current_app.db_table_name, current_app.db_table_id, \
+        current_app.db_keys, current_app.request_id = openapi_spec.get_database_info(request)
 
 
 @app.app.after_request

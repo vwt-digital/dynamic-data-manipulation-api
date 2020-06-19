@@ -66,39 +66,72 @@ def get_schema(spec, reference):
     return None
 
 
-def get_schema_properties(spec, schema):
+def get_schema_properties(spec, schema, request_method):
     """Returns all properties as {name: type} from a schema"""
-    properties = schema.get('properties', {})
+    schema_properties = schema.get('properties', {})
+    properties = {}
 
-    for field in properties:
-        if properties[field]['type'] in ['array', 'dict']:
-            for key in properties[field]:
-                if type(properties[field][key]) == dict and '$ref' in properties[field][key]:
-                    nested_schema = get_schema(spec, properties[field][key]['$ref'])
-                    properties[field] = get_schema_properties(spec, nested_schema)
+    for field in schema_properties:
+        if schema_properties[field]['type'] in ['array', 'dict']:
+            for key in schema_properties[field]:
+                if type(schema_properties[field][key]) == dict and '$ref' in schema_properties[field][key]:
+                    nested_schema = get_schema(spec, schema_properties[field][key]['$ref'])
+                    properties[field] = get_schema_properties(spec, nested_schema, request_method)
                     break
-        else:
-            properties[field] = properties[field]['type']
+        elif request_method != 'get' and not schema_properties[field].get('readOnly', False):
+            properties[field] = schema_properties[field]['type']
+        elif request_method == 'get':
+            properties[field] = schema_properties[field]['type']
 
     return properties if len(properties) > 0 else None
 
 
+def get_schema_id(spec, schema):
+    """Returns the x-db-table-id from a schema"""
+    schema_id = None
+
+    if 'x-db-table-id' in schema:
+        schema_id = schema['x-db-table-id']
+    else:
+        schema_properties = schema.get('properties')
+        for field in schema_properties:
+            if schema_properties[field]['type'] in ['array', 'dict']:
+                for key in schema_properties[field]:
+                    if type(schema_properties[field][key]) == dict and '$ref' in schema_properties[field][key]:
+                        nested_schema = get_schema(spec, schema_properties[field][key]['$ref'])
+                        schema_id = get_schema_id(spec, nested_schema)
+
+    return schema_id
+
+
+def get_request_param(path_item_object):
+    """Returns the first request parameter name"""
+    if 'parameters' in path_item_object:
+        return path_item_object['parameters'][0]['name']
+
+    return None
+
+
 def get_database_info(request):
-    """Returns the 'Database table name' and 'Database keys'"""
+    """Returns the all database info"""
     db_table_name = None
+    db_table_id = None
     db_keys = None
+    request_id = None
 
     spec = get_specification()
     request_method = str(request.method).lower()
     path_object = spec.get('paths', {}).get(transform_url_rule(request.url_rule), None)
 
-    if path_object:
+    if path_object and request_method in path_object:
+        path_item_object = path_object[request_method]
         db_table_name = path_object.get('x-db-table-name', None)
-        path_item_object = path_object.get(request_method, None)
 
-        if path_item_object:
-            path_schema_reference = get_path_schema_reference(path_item_object, request_method)
-            path_schema = get_schema(spec, path_schema_reference)
-            db_keys = get_schema_properties(spec, path_schema)
+        request_id = get_request_param(path_item_object)
 
-    return db_table_name, db_keys
+        path_schema_reference = get_path_schema_reference(path_item_object, request_method)
+        path_schema = get_schema(spec, path_schema_reference)
+        db_table_id = get_schema_id(spec, path_schema)
+        db_keys = get_schema_properties(spec, path_schema, request_method)
+
+    return db_table_name, db_table_id, db_keys, request_id

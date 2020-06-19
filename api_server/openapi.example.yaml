@@ -14,14 +14,14 @@ info:
 servers:
   - url: /
 paths:
-  /pets/{unique_id}:
+  /pets/{pet_id}:
     get:
       description: Returns a pet
       operationId: generic_get_single
       parameters:
         - explode: false
           in: path
-          name: unique_id
+          name: pet_id
           required: true
           schema:
             format: uuid
@@ -43,7 +43,7 @@ paths:
       parameters:
         - explode: false
           in: path
-          name: unique_id
+          name: pet_id
           required: true
           schema:
             format: uuid
@@ -103,24 +103,14 @@ paths:
         - oauth2: [customscope.edit]
     x-db-table-name: Pets
 components:
-  parameters:
-    UniqueId:
-      explode: false
-      in: path
-      name: unique_id
-      required: true
-      schema:
-        format: uuid
-        type: string
-      style: simple
   schemas:
     Pets:
       description: Collection of Pets
       example:
-        - id: a0e7fd7e-7134-46da-b6be-f152cff23da5
+        - pet_id: a0e7fd7e-7134-46da-b6be-f152cff23da5
           name: Izzy
           breed: Bulldog
-        - id: a0e7fd7e-7134-46da-b6be-f152cff23da5
+        - pet_id: a0e7fd7e-7134-46da-b6be-f152cff23da5
           name: Peter
           breed: Labrador
       properties:
@@ -132,11 +122,11 @@ components:
     Pet:
       description: Information about a pet
       example:
-        id: a0e7fd7e-7134-46da-b6be-f152cff23da5
+        pet_id: a0e7fd7e-7134-46da-b6be-f152cff23da5
         name: Izzy
         breed: Bulldog
       properties:
-        id:
+        pet_id:
           format: uuid
           type: string
         name:

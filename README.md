@@ -64,22 +64,24 @@ Because OpenAPI requires the specification to have unique `operationId`'s, this 
 To add two paths with both the posibility to post a single entity, the definitions `generic_post_single` and `generic_post_single2` can be used.
 Both these operations execute the same function but have unique identifiers.
 
-_For each definition are three implementations (`generic_post_single`, `generic_post_single2` and `generic_post_single3`)_
+_For each definition are three implementations (e.g. `generic_post_single`, `generic_post_single2` and `generic_post_single3`)_
 
 #### Path parameter
-To create an endpoint where a single entity can be retrieved a path parameter has to be defined to pass a unique identifier.
-To ensure multiple endpoints can use the same operations the distinct path parameter `unique_id` can be used for each path in need of a unique parameter.
-This parameter can be defined as described in the example below:
+To create an endpoint for single entities, a path parameter has to be defined. This path parameter will be used to retrieve or update
+a single entity in the specified database table(see [Database Reference](#database-reference)). The name of this parameter 
+will be used to retrieve the identifier from the request and passed towards the database connections.
+
+The parameter can be defined as described in the example below:
 ~~~yaml
 paths:
-  /pets/{unique_id}:
+  /pets/{pet_id}:
     get:
       description: Get a single pet by identifier
       operationId: generic_get_single  
       parameters:
         - explode: false
           in: path
-          name: unique_id
+          name: pet_id
           required: true
           schema:
             format: uuid
@@ -89,9 +91,9 @@ paths:
 ~~~
 
 #### Database reference
-To connect the endpoints to specific database kinds, the custom [extension](https://swagger.io/docs/specification/openapi-extensions) 
+To connect the endpoints to specific database tables, the custom [extension](https://swagger.io/docs/specification/openapi-extensions) 
 `x-db-table-name` must be used to ensure each path has it's database table name. The extension for this API can only be added to 
-individual paths, as shown below.
+individual paths, as shown below, and is required for each path.
 ~~~yaml
 paths:
     /pets:
@@ -107,10 +109,10 @@ paths:
 ~~~ 
 
 #### Schemas
-A big part of the OpenAPI specification are the schemas that can be defined. These schemas are used to validate all incoming information.
-and to return the correct information from the database. OpenAPI requires to define a schema on each path's method to ensure this
-functionality. Fortunately schemas can be re-used and are ease to create. After creating the schemas the API also requires to generate
-the correct models as described in '[Models](#models)'.
+A big part of the OpenAPI specification are the [schemas](https://swagger.io/docs/specification/data-models/) that can be defined.
+These schemas are used to validate all incoming information and to return the correct information from the database. 
+OpenAPI requires to define a schema on each path's method to ensure this functionality. Fortunately schemas can be re-used 
+and are ease to create. After creating the schemas the API also requires to generate the correct models as described in '[Models](#models)'.
 
 The example below creates a schema within the OpenAPI specification.
 ~~~yaml
@@ -119,11 +121,11 @@ components:
     Pet:
       description: Information about a pet
       example:
-        id: a0e7fd7e-7134-46da-b6be-f152cff23da5
+        pet_id: a0e7fd7e-7134-46da-b6be-f152cff23da5
         name: Doggy
         breed: Bulldog
       properties:
-        id:
+        pet_id:
           format: uuid
           type: string
         name:
@@ -150,7 +152,7 @@ paths:
         required: true
 ~~~
 
-To use this schema as a output validator, define this as the content from a response:
+To use this schema as an output validator, define this as the content from a response:
 ~~~yaml
 paths:
   /pets/{unique_id}:
@@ -165,6 +167,37 @@ paths:
                 $ref: '#/components/schemas/Pet'
           description: Returns a pet
 ~~~
+
+_Currently, the only [media type](https://swagger.io/docs/specification/describing-responses/#media-types) supported is `application/json`._
+
+##### Schema identifier
+The API will create response and body objects based on the schema's defined within a path method fully automatic. A big part of
+this automated process is the use of an identifier. As described before, you can create a [path parameter](#path-parameter) 
+to request a single entity. But to ensure the identifier is also available on each response object, a schema identifier has
+to be defined. This schema-identifier will be used to pass the distinct ID towards the response object.
+
+To let the API now on each request what attribute the ID is, two things have to be done:
+1.  Mark a schema property as [read-only](https://swagger.io/docs/specification/data-models/data-types/#readonly-writeonly).
+    This will ensure the property will be returned on a `GET`, but cannot be updated on a `PUT`, `PATCH` or `POST`. 
+    Because of this you can use the same schema in both `GET` and `POST` requests;
+    ~~~yaml
+    pet_id:
+      format: uuid
+      type: string
+      readOnly: true
+    ~~~
+2.  Define a property as a schema's identifier by adding the `x-db-table-id` extension, that is required with each single entity schema.
+    ~~~yaml
+    properties:
+      pet_id:
+        format: uuid
+        type: string
+        readOnly: true
+      name:
+        maxLength: 100
+        type: string
+    x-db-table-id: pet_id
+    ~~~
 
 #### Security
 An option to secury the endpoints is also available in the Dynamic Data Manipulation API. For now it can only be used with the 
@@ -250,7 +283,7 @@ table in the chosen database and will be filled with the following transaction i
 - Entity ID
 - Table Name
 - Timestamp
-- User email or IP
+- User email or IP address
 
 ### Deploying to Google Cloud Platform
 To deploy the API to the Google Cloud Platform a couple of options are available.

@@ -8,11 +8,11 @@ class DatabaseInterface(ABC):
         pass
 
     @abstractmethod
-    def get_single(self, unique_id, kind, keys):
+    def get_single(self, id, kind, keys):
         pass
 
     @abstractmethod
-    def put_single(self, unique_id, body, kind, keys):
+    def put_single(self, id, body, kind, keys):
         pass
 
     @abstractmethod
