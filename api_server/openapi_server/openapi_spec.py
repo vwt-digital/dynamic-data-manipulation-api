@@ -70,6 +70,7 @@ def get_schema_properties(spec, schema, request_method):
     """Returns all properties as {name: type} from a schema"""
     schema_properties = schema.get('properties', {})
     properties = {}
+    required_properties = schema.get('required', [])
 
     for field in schema_properties:
         if schema_properties[field]['type'] in ['array', 'dict']:
@@ -79,9 +80,12 @@ def get_schema_properties(spec, schema, request_method):
                     properties[field] = get_schema_properties(spec, nested_schema, request_method)
                     break
         elif request_method != 'get' and not schema_properties[field].get('readOnly', False):
-            properties[field] = schema_properties[field]['type']
+            properties[field] = schema_properties[field]
         elif request_method == 'get':
-            properties[field] = schema_properties[field]['type']
+            properties[field] = schema_properties[field]
+
+        if field in required_properties:
+            properties[field]['required'] = True
 
     return properties if len(properties) > 0 else None
 

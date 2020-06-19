@@ -22,7 +22,10 @@ def generic_get_multiple():  # noqa: E501
     if db_existence:
         return db_existence
 
-    db_response = current_app.db_client.get_multiple(kind=current_app.db_table_name, keys=current_app.db_keys)
+    try:
+        db_response = current_app.db_client.get_multiple(kind=current_app.db_table_name, keys=current_app.db_keys)
+    except ValueError as e:
+        return make_response(jsonify(str(e)), 400)
 
     if db_response:
         return db_response
@@ -49,8 +52,11 @@ def generic_get_single(**kwargs):  # noqa: E501
         return id_existence
 
     # Call DB func
-    db_response = current_app.db_client.get_single(
-        id=kwargs.get(current_app.request_id), kind=current_app.db_table_name, keys=current_app.db_keys)
+    try:
+        db_response = current_app.db_client.get_single(
+            id=kwargs.get(current_app.request_id), kind=current_app.db_table_name, keys=current_app.db_keys)
+    except ValueError as e:
+        return make_response(jsonify(str(e)), 400)
 
     if db_response:
         return db_response
@@ -72,8 +78,11 @@ def generic_post_single(**kwargs):  # noqa: E501
         return db_existence
 
     # Call DB func
-    db_response = current_app.db_client.post_single(
-        body=kwargs.get('body', {}), kind=current_app.db_table_name, keys=current_app.db_keys)
+    try:
+        db_response = current_app.db_client.post_single(
+            body=kwargs.get('body', {}), kind=current_app.db_table_name, keys=current_app.db_keys)
+    except ValueError as e:
+        return make_response(jsonify(str(e)), 400)
 
     if db_response:
         return make_response(jsonify(db_response), 201)
@@ -91,7 +100,7 @@ def generic_put_single(**kwargs):  # noqa: E501
     """
     # Check for Database configuration
     db_existence = check_database_configuration()
-    if db_existence or current_app.entity_id not in kwargs:
+    if db_existence:
         return db_existence
 
     # Check if identifier exists and in kwargs
@@ -100,9 +109,12 @@ def generic_put_single(**kwargs):  # noqa: E501
         return id_existence
 
     # Call DB func
-    db_response = current_app.db_client.put_single(
-        id=kwargs.get(current_app.request_id), body=kwargs.get('body', {}), kind=current_app.db_table_name,
-        keys=current_app.db_keys)
+    try:
+        db_response = current_app.db_client.put_single(
+            id=kwargs.get(current_app.request_id), body=kwargs.get('body', {}), kind=current_app.db_table_name,
+            keys=current_app.db_keys)
+    except ValueError as e:
+        return make_response(jsonify(str(e)), 400)
 
     if db_response:
         return make_response(jsonify(db_response), 201)

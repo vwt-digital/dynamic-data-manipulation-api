@@ -33,7 +33,7 @@ class FirestoreDatabase(DatabaseInterface):
                     doc_ref = self.db_client.collection(config.AUDIT_LOGS_NAME).document()
                     doc_ref.set({
                         "attributes_changed": json.dumps(changed),
-                        "entity_id": entity_id,
+                        "table_id": entity_id,
                         "table_name": current_app.db_table_name,
                         "timestamp": datetime.datetime.utcnow().isoformat(timespec="seconds") + 'Z',
                         "user": current_app.user if current_app.user is not None else request.remote_addr
@@ -142,6 +142,9 @@ def create_entity_object(keys, entity, method):
                 entity_to_return[key] = entity.get(key)
             elif key in entity:
                 entity_to_return[key] = entity.get(key)
+
+        if keys[key].get('required', False) and method != 'get' and not entity.get(key, None):
+            raise ValueError(f"Property '{key}' is required")
 
     return entity_to_return
 
