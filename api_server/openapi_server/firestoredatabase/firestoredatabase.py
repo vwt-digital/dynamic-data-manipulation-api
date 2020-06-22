@@ -112,18 +112,25 @@ class FirestoreDatabase(DatabaseInterface):
 
         return doc_ref.id
 
-    def get_multiple(self, kind, keys):
+    def get_multiple(self, kind, keys, limit, offset):
         """Returns all entities as a list of dicts
 
         :param kind: Database kind of entity
         :type kind: str
         :param keys: List of entity keys
         :type kind: list
+        :param limit: The number of items to skip before starting to collect the result set
+        :type limit: int
+        :param offset: The numbers of items to return
+        :type offset: int
 
         :rtype: array
         """
-
         users_ref = self.db_client.collection(kind)
+        if offset:
+            users_ref = users_ref.offset(offset)
+        if limit:
+            users_ref = users_ref.limit(limit)
         docs = users_ref.stream()
 
         if docs:

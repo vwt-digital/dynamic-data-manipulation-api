@@ -20,5 +20,5 @@ class DatabaseInterface(ABC):
         pass
 
     @abstractmethod
-    def get_multiple(self, kind, keys):
+    def get_multiple(self, kind, keys, limit, offset):
         pass

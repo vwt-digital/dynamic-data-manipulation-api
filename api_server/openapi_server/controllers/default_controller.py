@@ -12,8 +12,11 @@ def check_identifier(kwargs):
         return make_response(jsonify("Identifier name not found"), 500)
 
 
-def generic_get_multiple():  # noqa: E501
+def generic_get_multiple(**kwargs):  # noqa: E501
     """Returns a array of entities
+
+    :param kwargs: Keyword argument list
+    :type kwargs: dict
 
     :rtype: array
     """
@@ -22,8 +25,12 @@ def generic_get_multiple():  # noqa: E501
     if db_existence:
         return db_existence
 
+    limit = kwargs.get('limit', None)
+    offset = kwargs.get('offset', None)
+
     try:
-        db_response = current_app.db_client.get_multiple(kind=current_app.db_table_name, keys=current_app.db_keys)
+        db_response = current_app.db_client.get_multiple(
+            kind=current_app.db_table_name, keys=current_app.db_keys, limit=limit, offset=offset)
     except ValueError as e:
         return make_response(jsonify(str(e)), 400)
 
@@ -122,12 +129,12 @@ def generic_put_single(**kwargs):  # noqa: E501
     return make_response('Not found', 404)
 
 
-def generic_get_multiple2():  # noqa: E501
-    generic_get_multiple()
+def generic_get_multiple2(**kwargs):  # noqa: E501
+    generic_get_multiple(**kwargs)
 
 
-def generic_get_multiple3():  # noqa: E501
-    generic_get_multiple()
+def generic_get_multiple3(**kwargs):  # noqa: E501
+    generic_get_multiple(**kwargs)
 
 
 def generic_get_single2(**kwargs):  # noqa: E501

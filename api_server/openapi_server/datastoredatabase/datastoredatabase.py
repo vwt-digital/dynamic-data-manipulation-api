@@ -110,19 +110,29 @@ class DatastoreDatabase(DatabaseInterface):
 
         return entity.key.id_or_name
 
-    def get_multiple(self, kind, keys):
+    def get_multiple(self, kind, keys, limit, offset):
         """Returns all entities as a list of dicts
 
         :param kind: Database kind of entity
         :type kind: str
         :param keys: List of entity keys
         :type kind: list
+        :param limit: The number of items to skip before starting to collect the result set
+        :type limit: int
+        :param offset: The numbers of items to return
+        :type offset: int
 
         :rtype: array
         """
 
+        query_params = {}
+        if limit:
+            query_params['limit'] = limit
+        if offset:
+            query_params['offset'] = offset
+
         query = self.db_client.query(kind=kind)
-        entities = list(query.fetch())
+        entities = list(query.fetch(**query_params))
 
         if entities:
             return create_response(keys, entities)

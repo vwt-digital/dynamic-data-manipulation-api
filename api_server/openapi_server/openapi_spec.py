@@ -110,7 +110,8 @@ def get_schema_id(spec, schema):
 
 def get_request_param(path_item_object):
     """Returns the first request parameter name"""
-    if 'parameters' in path_item_object:
+    if 'parameters' in path_item_object and 'name' in path_item_object['parameters'][0] and \
+            path_item_object['parameters'][0]['name'] not in ['limit', 'offset']:
         return path_item_object['parameters'][0]['name']
 
     return None

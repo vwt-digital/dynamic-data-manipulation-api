@@ -90,6 +90,50 @@ paths:
       x-openapi-router-controller: openapi_server.controllers.default_controller
 ~~~
 
+#### Offset and limit
+Within the API it is also possible to create pagination by including the [offset and limit parameters](https://swagger.io/docs/specification/describing-parameters/#common-for-various-paths).
+Both can be defined as parameter component and can be referenced within a path method. The parameters only work in combination with 
+the operation `generic_get_multiple` (see '[Method operations](#method-operations)').
+
+First add either parameter to the `components` section as shown below. The schema of both parameters can be changed to your needs.
+For example; if you need the standard limit to be 50, change `default: 20` to `default: 50`. It is important that both parameter names
+are as described: `limit` and `offset`. These names are used within the API code to retrieve them.
+~~~yaml
+components:
+  parameters:
+    limitParam:
+      in: query
+      name: limit
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 50
+        default: 20
+      description: The numbers of items to return.
+    offsetParam:
+      in: query
+      name: offset
+      required: false
+      schema:
+        type: integer
+        minimum: 0
+      description: The number of items to skip before starting to collect the result set.
+~~~
+
+Secondly, reference either parameter in the desired path method(s).
+~~~yaml
+paths:
+  /pets:
+    get:
+      description: Get a list of all pets
+      operationId: generic_get_multiple
+      parameters:
+        - $ref: '#/components/parameters/limitParam'
+        - $ref: '#/components/parameters/offsetParam'
+      x-openapi-router-controller: openapi_server.controllers.default_controller
+~~~
+
 #### Database reference
 To connect the endpoints to specific database tables, the custom [extension](https://swagger.io/docs/specification/openapi-extensions) 
 `x-db-table-name` must be used to ensure each path has it's database table name. The extension for this API can only be added to 
