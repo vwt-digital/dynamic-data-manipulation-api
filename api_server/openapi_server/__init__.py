@@ -34,11 +34,9 @@ def validate_schema(self, data, url):
     try:
         self.validator.validate(data)
     except ValidationError as exception:
-        logging.error("{url} validation error: {error}".format(url=url,
-                                                               error=exception.message),
-                      extra={'validator': 'body'})
-        return problem(400, 'Bad Request', 'Some data is missing or incorrect',
-                       type='Validation')
+        logging.error(
+            "{url} validation error: {error}".format(url=url, error=exception.message), extra={'validator': 'body'})
+        return problem(400, 'Bad Request', 'Some data is missing or incorrect', type='Validation')
 
     return None
 
@@ -50,7 +48,7 @@ app.app.json_encoder = encoder.JSONEncoder
 app.add_api('openapi.yaml',
             arguments={'title': 'Dynamic Data Manipulator API'},
             strict_validation=True)
-if 'GAE_INSTANCE' in os.environ:
+if 'GAE_INSTANCE' in os.environ or 'K_SERVICE' in os.environ:
     CORS(app.app, origins=config.ORIGINS)
 else:
     CORS(app.app)
@@ -59,7 +57,11 @@ with app.app.app_context():
     current_app.__pii_filter_def__ = None
     current_app.db_client = None
     current_app.db_table_name = None
+    current_app.db_table_id = None
     current_app.db_keys = None
+    current_app.request_id = None
+    current_app.user = None
+    current_app.token = None
 
     if hasattr(config, 'DATABASE_TYPE'):
         if config.DATABASE_TYPE == 'datastore':
@@ -70,7 +72,8 @@ with app.app.app_context():
 
 @app.app.before_request
 def before_request_func():
-    current_app.db_table_name, current_app.db_keys = openapi_spec.get_database_info(request)
+    current_app.db_table_name, current_app.db_table_id, \
+        current_app.db_keys, current_app.request_id = openapi_spec.get_database_info(request)
 
 
 @app.app.after_request
@@ -79,7 +82,7 @@ def add_header(response):
                                                   "img-src 'self' data:; font-src 'self' fonts.gstatic.com data:; " \
                                                   "style-src 'self' fonts.googleapis.com 'unsafe-inline'; " \
                                                   "style-src-elem 'self' fonts.googleapis.com 'unsafe-inline'; " \
-                                                  "connect-src 'self'; form-action 'none'; frame-src data:; " \
+                                                  "connect-src 'self' opensource.zalando.com; form-action 'none'; frame-src data:; " \
                                                   "frame-ancestors 'none'"
     response.headers['X-Frame-Options'] = "SAMEORIGIN"
     response.headers['X-Content-Type-Options'] = "nosniff"
