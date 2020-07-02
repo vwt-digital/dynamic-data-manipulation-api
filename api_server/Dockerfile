@@ -1,15 +1,28 @@
-FROM python:3-alpine
+FROM python:3.7-slim as base
 
-RUN mkdir -p /usr/src/app
-WORKDIR /usr/src/app
+# ---- compile image -----------------------------------------------
+FROM base AS compile-image
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+  build-essential \
+  gcc
 
-COPY requirements.txt /usr/src/app/
+RUN python -m venv /app/env
+ENV PATH="/app/env/bin:$PATH"
 
-RUN apk update \
-    && apk add --update --no-cache build-base python3-dev python3 libffi-dev libressl-dev bash git gettext curl gcc \
-    && pip3 install --no-cache-dir -r requirements.txt
+COPY requirements.unexpanded.txt .
+RUN pip install --upgrade pip
+# pip install is fast here (while slow without the venv) :
+RUN pip install -r requirements.unexpanded.txt
 
-COPY . /usr/src/app
+# ---- build image -----------------------------------------------
+FROM base AS build-image
+COPY --from=compile-image /app/env /app/env
+
+# Make sure we use the virtualenv:
+ENV PATH="/app/env/bin:$PATH"
+COPY . /app
+WORKDIR /app
 
 EXPOSE 8080
 
