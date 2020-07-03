@@ -68,8 +68,8 @@ def generic_get_multiple_page(**kwargs):  # noqa: E501
         if db_response.get('next_page'):
             url_rule = re.sub(r'<.*?>', '', str(request.url_rule)).strip('/')
 
-            if not url_rule.endswith("/page"):
-                url_rule = f"{url_rule}/page"
+            if not url_rule.endswith("/pages"):
+                url_rule = f"{url_rule}/pages"
 
             db_response['next_page'] = f"{request.host_url}{url_rule}/{db_response['next_page']}" \
                                        f"?page_size={page_size}&page_action=next"
