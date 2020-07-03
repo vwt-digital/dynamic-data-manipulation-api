@@ -112,25 +112,18 @@ class FirestoreDatabase(DatabaseInterface):
 
         return doc_ref.id
 
-    def get_multiple(self, kind, keys, limit, offset):
+    def get_multiple(self, kind, keys):
         """Returns all entities as a list of dicts
 
         :param kind: Database kind of entity
         :type kind: str
         :param keys: List of entity keys
         :type kind: list
-        :param limit: The number of items to skip before starting to collect the result set
-        :type limit: int
-        :param offset: The numbers of items to return
-        :type offset: int
 
         :rtype: array
         """
+
         users_ref = self.db_client.collection(kind)
-        if offset:
-            users_ref = users_ref.offset(offset)
-        if limit:
-            users_ref = users_ref.limit(limit)
         docs = users_ref.stream()
 
         if docs:
@@ -138,12 +131,73 @@ class FirestoreDatabase(DatabaseInterface):
 
         return None
 
+    def get_multiple_page(self, kind, keys, page_cursor, page_size, page_action):
+        """Returns all entities as a list of dicts
+
+        :param kind: Database kind of entity
+        :type kind: str
+        :param keys: List of entity keys
+        :type kind: list
+        :param page_cursor: The cursor for retrieve a specific page
+        :type page_cursor: str
+        :param page_size: The numbers of items within a page
+        :type page_size: int
+        :param page_action: Selector to get next or previous page based on the cursor
+        :type page_action: str
+
+        :rtype: dict
+        """
+
+        docs_ref = self.db_client.collection(kind)
+        docs_ref = docs_ref.limit(page_size)
+
+        if page_cursor:
+            snapshot = self.db_client.collection(kind).document(page_cursor).get()
+            if snapshot:
+                docs_ref = docs_ref.end_at(snapshot) if page_action == 'prev' else docs_ref.start_after(snapshot)
+            else:
+                raise ValueError("Cursor is not valid")
+
+        docs = [{'id': doc.id, **doc.to_dict()} for doc in docs_ref.stream()]
+
+        response = {
+            'results': keys['results']
+        }
+
+        # Return results
+        if docs:
+            response = create_response(response, docs)
+
+            if page_action == 'prev':
+                if current_app.db_table_id:
+                    response['results'] = sorted(
+                        response['results'], key=lambda i: i[current_app.db_table_id], reverse=True)
+                next_cursor = page_cursor  # Grab current cursor for next page
+            else:
+                next_cursor = docs[-1]['id'] if self.check_for_next_document(docs[-1]['id'], kind) else None
+        else:
+            response['results'] = []
+            next_cursor = None
+
+        # Create response object
+        response['status'] = 'success'
+        response['page_size'] = page_size
+        response['next_page'] = next_cursor
+
+        return response
+
+    def check_for_next_document(self, document_id, kind):
+        snapshot = self.db_client.collection(kind).document(document_id).get()
+        docs = self.db_client.collection(kind).limit(1).start_after(snapshot).stream()
+
+        return True if len(list(docs)) > 0 else False
+
 
 def create_entity_object(keys, entity, method):
     entity_to_return = {}
     for key in keys:
         if key == current_app.db_table_id:
-            entity_to_return[key] = entity.id
+            entity_to_return[key] = entity['id'] if isinstance(entity, dict) else entity.id
         else:
             if method == 'get':
                 entity_to_return[key] = entity.get(key)
@@ -157,7 +211,7 @@ def create_entity_object(keys, entity, method):
 
 
 def create_response(keys, data):
-    if isinstance(data, types.GeneratorType):
+    if isinstance(data, types.GeneratorType) or isinstance(data, list):
         return_object = {}
         for key in keys:
             if type(keys[key]) == dict:

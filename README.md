@@ -46,6 +46,7 @@ components to make the API work. Below these components are explained on how you
 To ensure the only configuration you need to make this API work there are some generic definitions specified within the API where data can be retrieved from
 or posted to. These definitions make sure when a path is requested a function will process the request. There are three major definitions that can be used.
 - `generic_get_multiple`: Retrieves all entities from a database table;
+- `generic_get_multiple_page`: Retrieves entities from a database table page (see [Pagination](#pagination));
 - `generic_get_single`: Retrieves one entity from a database table, based on a `unique_id`;
 - `generic_post_single`: Creates a new entity in a database table, based on a request body;
 - `generic_put_single`: Updates an existing entity from a database table, based on a `unique_id` and a request body.
@@ -90,49 +91,148 @@ paths:
       x-openapi-router-controller: openapi_server.controllers.default_controller
 ~~~
 
-#### Offset and limit
-Within the API it is also possible to create pagination by including the [offset and limit parameters](https://swagger.io/docs/specification/describing-parameters/#common-for-various-paths).
-Both can be defined as parameter component and can be referenced within a path method. The parameters only work in combination with 
-the operation `generic_get_multiple` (see '[Method operations](#method-operations)').
+#### Pagination
+Within the API it is also possible to create pagination by using a page cursor, size and action. It is important to implement
+the pagination as described below to optimize the use of cursors.
 
-First add either parameter to the `components` section as shown below. The schema of both parameters can be changed to your needs.
-For example; if you need the standard limit to be 50, change `default: 20` to `default: 50`. It is important that both parameter names
-are as described: `limit` and `offset`. These names are used within the API code to retrieve them.
-~~~yaml
-components:
-  parameters:
-    limitParam:
-      in: query
-      name: limit
-      required: false
-      schema:
-        type: integer
-        minimum: 1
-        maximum: 50
-        default: 20
-      description: The numbers of items to return.
-    offsetParam:
-      in: query
-      name: offset
-      required: false
-      schema:
-        type: integer
-        minimum: 0
-      description: The number of items to skip before starting to collect the result set.
-~~~
+First, two paths to be defined: one to request a list of entities without referencing any cursor and one to request a specific
+page of entities based on a cursor. Both paths will use the operation implementation `generic_get_multiple_page*` as 
+it is optimized to support both type of requests.
 
-Secondly, reference either parameter in the desired path method(s).
+##### 1. Initial request
+The first path method to be defined is a path that will retrieve all entities from a database table based on a page size. As seen
+in the code below we are creating a `paths` that passes a `page_size` query parameter. This ensures the endpoint will retrieve
+a list of X entities based on the `page_size`, that is defined within the `components/parameters/pageSizeParam` definition.
+
+Furthermore a response is defined based on the `components/schemas/PetsResponse` definition. It is essential that the request's response
+is defined with the same objects as in de example below. The parts that can be changed are the name of the definition and the `items` within the `results` array.
+
+This initial request will get a list of entities and will return the uri towards the next list of entities.
+
 ~~~yaml
 paths:
   /pets:
     get:
-      description: Get a list of all pets
-      operationId: generic_get_multiple
+      description: Get a list of pets
+      operationId: generic_get_multiple_page
       parameters:
-        - $ref: '#/components/parameters/limitParam'
-        - $ref: '#/components/parameters/offsetParam'
+        - $ref: '#/components/parameters/pageSizeParam'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PetsResponse'
+          description: Returns a list of pets
       x-openapi-router-controller: openapi_server.controllers.default_controller
+components:
+  parameters:
+    pageSizeParam:
+      in: query
+      name: page_size
+      required: false
+      schema:
+        default: 50
+        maximum: 100
+        minimum: 1
+        type: integer
+      description: The numbers of items within a page
+  schemas:
+    PetsResponse:
+      example:
+        status: Success
+        page_size: 50
+        next_page: https://example.com/page/eee028e4-ef38-40fb-a92b-41c441660d2e
+        results: []
+      properties:
+        status:
+          description: The request status.
+          type: string
+        page_size:
+          description: The current page size
+          format: int32
+          type: integer
+        next_page:
+          description: The next page uri
+          type: string
+        results:
+          items:
+            $ref: '#/components/schemas/Pets'
+          type: array
+      type: object
 ~~~
+
+##### 2. Request based on a page
+After the initial request has been done we can request specific pages based on the `page_cursor`. A cursor is a string 
+that points towards a specific entity within the database and is generated by the API. The path that will process these 
+specific pages is defined as below. It is essential that the path is a duplicated of the first request path (as described above)
+extended with `/page/{page_cursor}`. Within the API both these uri parts are used to retrieve the specific pages and create
+a uri for the next page.
+
+This path will also use the previously defined `page_size` query parameter, `PetsResponse` response schema and `generic_get_multiple_page2`
+operation. Make sure this operation ID has a different implementation (e.g. `generic_get_multiple_page2` instead of `generic_get_multiple_page`) 
+to ensure we conform to the Zally specifications  (see [Method operations](#method-operations)). The additions for this 
+path are the `page_cursor` path parameter and `page_action` parameter. As explained the `page_cursor` will ensure the 
+database returns entities from a specific point in the database and the `page_action` will define if we retrieve the 
+entities after this point or before this point with the values `next` and `prev`.
+
+~~~yaml
+paths:
+  /pets/page/{page_cursor}:
+    get:
+      description: Get a list of pets from a specific page
+      operationId: generic_get_multiple_page2
+      parameters:
+        - $ref: '#/components/parameters/pageCursorParam'
+        - $ref: '#/components/parameters/pageSizeParam'
+        - $ref: '#/components/parameters/pageActionParam'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PetsResponse'
+          description: Returns a list of pets
+      x-openapi-router-controller: openapi_server.controllers.default_controller
+components:
+  parameters:
+    pageCursorParam:
+      in: path
+      explode: false
+      name: page_cursor
+      required: true
+      schema:
+        type: string
+      style: simple
+      description: The cursor for retrieve a specific page
+    pageActionParam:
+      in: query
+      name: page_action
+      required: false
+      schema:
+        default: next
+        enum:
+          - prev
+          - next
+        type: string
+      description: Selector to get next or previous page based on the cursor
+~~~
+
+##### Indexes
+To make sure the database will order the entities as required a index has to be defined. This is only needed for the 
+database type Datastore (see [Database Type](#database-type)). This index will ensure the entities are filtered on there 
+key differenly for both the `next` as `prev` `page_action` action and is needed to support pagination for Datastore tables. 
+
+The index can be deployed with the following configuration file 
+(see [Creating Datastore Indexes](https://cloud.google.com/sdk/gcloud/reference/datastore/indexes/create)):
+~~~yaml
+indexes:
+- kind: Pets
+  properties:
+  - name: __key__
+    direction: desc
+~~~
+
 
 #### Database reference
 To connect the endpoints to specific database tables, the custom [extension](https://swagger.io/docs/specification/openapi-extensions) 
