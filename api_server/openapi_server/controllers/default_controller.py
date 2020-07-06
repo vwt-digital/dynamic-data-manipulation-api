@@ -1,6 +1,11 @@
+import config
+import os
 import re
+import base64
+import logging
 
 from flask import request, current_app, jsonify, make_response
+from google.cloud import kms
 
 
 def check_database_configuration():
@@ -12,6 +17,35 @@ def check_database_configuration():
 def check_identifier(kwargs):
     if current_app.request_id is None or current_app.request_id not in kwargs:
         return make_response(jsonify("Identifier name not found"), 500)
+
+
+def kms_encrypt_decrypt_cursor(cursor, kms_type):
+    if cursor and hasattr(config, 'KMS_KEY_INFO') and \
+            'keyring' in config.KMS_KEY_INFO and \
+            'key' in config.KMS_KEY_INFO and \
+            'location' in config.KMS_KEY_INFO:
+        project_id = os.environ['GOOGLE_CLOUD_PROJECT']
+        location_id = config.KMS_KEY_INFO['location']
+        key_ring_id = config.KMS_KEY_INFO['keyring']
+        crypto_key_id = config.KMS_KEY_INFO['key']
+
+        try:
+            client = kms.KeyManagementServiceClient()
+            name = client.crypto_key_path_path(project_id, location_id, key_ring_id, crypto_key_id)
+
+            if kms_type == 'encrypt':
+                encrypt_response = client.encrypt(name, cursor.encode())
+                response = base64.urlsafe_b64encode(encrypt_response.ciphertext).decode()
+            else:
+                encrypt_response = client.decrypt(name, base64.urlsafe_b64decode(cursor))
+                response = encrypt_response.plaintext
+        except Exception as e:
+            logging.error(f"An exception occurred when {kms_type}-ing a cursor: {str(e)}")
+            return None
+    else:
+        response = cursor
+
+    return response
 
 
 def generic_get_multiple():  # noqa: E501
@@ -53,7 +87,7 @@ def generic_get_multiple_page(**kwargs):  # noqa: E501
     if db_existence:
         return db_existence
 
-    page_cursor = kwargs.get('page_cursor', None)
+    page_cursor = kms_encrypt_decrypt_cursor(kwargs.get('page_cursor', None), 'decrypt')
     page_size = kwargs.get('page_size', 50)
     page_action = kwargs.get('page_action', 'next')
 
@@ -66,13 +100,13 @@ def generic_get_multiple_page(**kwargs):  # noqa: E501
 
     if db_response:
         if db_response.get('next_page'):
+            cursor = kms_encrypt_decrypt_cursor(db_response.get('next_page'), 'encrypt')
             url_rule = re.sub(r'<.*?>', '', str(request.url_rule)).strip('/')
 
             if not url_rule.endswith("/pages"):
                 url_rule = f"{url_rule}/pages"
 
-            db_response['next_page'] = f"{request.host_url}{url_rule}/{db_response['next_page']}" \
-                                       f"?page_size={page_size}&page_action=next"
+            db_response['next_page'] = f"{request.host_url}{url_rule}/{cursor}?page_size={page_size}&page_action=next"
 
         return db_response
 

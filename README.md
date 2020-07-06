@@ -27,6 +27,7 @@ The available variables are:
 - `ORIGINS`: `[required]` `[list]` A list containing allowed origins for access
 - `DATABASE_TYPE`: `[required]` `[string]` The identifier for the database to be used (see [Database Type](#database-type))
 - `AUDIT_LOGS_NAME`: `[string]` The identifier for the Database table where the audit logs will be inserted (see [Audit logging](#audit-logging))
+- `KMS_KEY_INFO`: `[object]` KMS information for encrypting and decrypting sensitive information (see [Cursor encryption](#cursor-encryption))
 
 #### Database Type
 One of the configuration variables to be specified is the `DATABASE_TYPE`. This will specify the database the API will use to add, retrieve and edit
@@ -232,6 +233,23 @@ indexes:
   - name: __key__
     direction: desc
 ~~~
+
+##### Cursor encryption
+It is possible for a client to decode the cursors to expose information about entities, such as the project ID, 
+entity kind, key name or numeric ID, ancestor keys, and properties used in the query's filters and sort orders. To ensure
+this is not possible, the API supports [KMS](https://cloud.google.com/kms/docs/encrypt-decrypt) encryption and decryption for the cursors.
+To enable this functionality, a configuration key has to be added to the `config.py` file as shown below:
+~~~python
+KMS_KEY_INFO = {
+    "keyring": "keyring-name",
+    "key": "key-name",
+    "location": "location-name"
+}
+~~~
+
+These configuration keys can be defined when creating a KMS keyring and its key and are necessary to encrypt and decrypt
+the cursors. If this object is provided within the `config.py` the KMS encryption/decryption is automatically enabled. 
+If not, it will return the cursor without decryption.
 
 
 #### Database reference

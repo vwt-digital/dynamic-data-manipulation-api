@@ -6,3 +6,8 @@ ORIGINS = []
 
 DATABASE_TYPE = ""
 AUDIT_LOGS_NAME = ""
+KMS_KEY_INFO = {
+    "keyring": "",
+    "key": "",
+    "location": ""
+}
