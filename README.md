@@ -153,6 +153,9 @@ components:
           description: The current page size
           format: int32
           type: integer
+        prev_page:
+          description: The prev page uri
+          type: string
         next_page:
           description: The next page uri
           type: string

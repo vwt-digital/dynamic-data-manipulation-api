@@ -34,7 +34,7 @@ def kms_encrypt_decrypt_cursor(cursor, kms_type):
             name = client.crypto_key_path_path(project_id, location_id, key_ring_id, crypto_key_id)
 
             if kms_type == 'encrypt':
-                encrypt_response = client.encrypt(name, cursor.encode())
+                encrypt_response = client.encrypt(name, cursor.encode() if isinstance(cursor, str) else cursor)
                 response = base64.urlsafe_b64encode(encrypt_response.ciphertext).decode()
             else:
                 encrypt_response = client.decrypt(name, base64.urlsafe_b64decode(cursor))
@@ -99,14 +99,23 @@ def generic_get_multiple_page(**kwargs):  # noqa: E501
         return make_response(jsonify(str(e)), 400)
 
     if db_response:
+        url_rule = re.sub(r'<.*?>', '', str(request.url_rule)).strip('/')
+
         if db_response.get('next_page'):
-            cursor = kms_encrypt_decrypt_cursor(db_response.get('next_page'), 'encrypt')
-            url_rule = re.sub(r'<.*?>', '', str(request.url_rule)).strip('/')
+            next_cursor = kms_encrypt_decrypt_cursor(db_response.get('next_page'), 'encrypt')
 
             if not url_rule.endswith("/pages"):
                 url_rule = f"{url_rule}/pages"
 
-            db_response['next_page'] = f"{request.host_url}{url_rule}/{cursor}?page_size={page_size}&page_action=next"
+            db_response['next_page'] = f"{request.host_url}{url_rule}/{next_cursor}?page_size={page_size}&page_action=next"
+        else:
+            db_response['next_page'] = None
+
+        if page_cursor:
+            prev_cursor = kms_encrypt_decrypt_cursor(page_cursor, 'encrypt')
+            db_response['prev_page'] = f"{request.host_url}{url_rule}/{prev_cursor}?page_size={page_size}&page_action=prev"
+        else:
+            db_response['prev_page'] = None
 
         return db_response
 
