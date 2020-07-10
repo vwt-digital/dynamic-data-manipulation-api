@@ -1,4 +1,11 @@
-from flask import current_app, jsonify, make_response
+import config
+import os
+import re
+import base64
+import logging
+
+from flask import request, current_app, jsonify, make_response
+from google.cloud import kms
 
 
 def check_database_configuration():
@@ -12,7 +19,36 @@ def check_identifier(kwargs):
         return make_response(jsonify("Identifier name not found"), 500)
 
 
-def generic_get_multiple(**kwargs):  # noqa: E501
+def kms_encrypt_decrypt_cursor(cursor, kms_type):
+    if cursor and hasattr(config, 'KMS_KEY_INFO') and \
+            'keyring' in config.KMS_KEY_INFO and \
+            'key' in config.KMS_KEY_INFO and \
+            'location' in config.KMS_KEY_INFO:
+        project_id = os.environ['GOOGLE_CLOUD_PROJECT']
+        location_id = config.KMS_KEY_INFO['location']
+        key_ring_id = config.KMS_KEY_INFO['keyring']
+        crypto_key_id = config.KMS_KEY_INFO['key']
+
+        try:
+            client = kms.KeyManagementServiceClient()
+            name = client.crypto_key_path_path(project_id, location_id, key_ring_id, crypto_key_id)
+
+            if kms_type == 'encrypt':
+                encrypt_response = client.encrypt(name, cursor.encode() if isinstance(cursor, str) else cursor)
+                response = base64.urlsafe_b64encode(encrypt_response.ciphertext).decode()
+            else:
+                encrypt_response = client.decrypt(name, base64.urlsafe_b64decode(cursor))
+                response = encrypt_response.plaintext
+        except Exception as e:
+            logging.error(f"An exception occurred when {kms_type}-ing a cursor: {str(e)}")
+            return None
+    else:
+        response = cursor
+
+    return response
+
+
+def generic_get_multiple():  # noqa: E501
     """Returns a array of entities
 
     :param kwargs: Keyword argument list
@@ -20,21 +56,68 @@ def generic_get_multiple(**kwargs):  # noqa: E501
 
     :rtype: array
     """
+
     # Check for Database configuration
     db_existence = check_database_configuration()
     if db_existence:
         return db_existence
 
-    limit = kwargs.get('limit', None)
-    offset = kwargs.get('offset', None)
-
     try:
-        db_response = current_app.db_client.get_multiple(
-            kind=current_app.db_table_name, keys=current_app.db_keys, limit=limit, offset=offset)
+        db_response = current_app.db_client.get_multiple(kind=current_app.db_table_name, keys=current_app.db_keys)
     except ValueError as e:
         return make_response(jsonify(str(e)), 400)
 
     if db_response:
+        return db_response
+
+    return make_response(jsonify([]), 204)
+
+
+def generic_get_multiple_page(**kwargs):  # noqa: E501
+    """Returns a dict containing entities and pagination information
+
+    :param kwargs: Keyword argument list
+    :type kwargs: dict
+
+    :rtype: array
+    """
+
+    # Check for Database configuration
+    db_existence = check_database_configuration()
+    if db_existence:
+        return db_existence
+
+    page_cursor = kms_encrypt_decrypt_cursor(kwargs.get('page_cursor', None), 'decrypt')
+    page_size = kwargs.get('page_size', 50)
+    page_action = kwargs.get('page_action', 'next')
+
+    try:
+        db_response = current_app.db_client.get_multiple_page(
+            kind=current_app.db_table_name, keys=current_app.db_keys, page_cursor=page_cursor, page_size=page_size,
+            page_action=page_action)
+    except ValueError as e:
+        return make_response(jsonify(str(e)), 400)
+
+    if db_response:
+        url_rule = re.sub(r'<.*?>', '', str(request.url_rule)).strip('/')
+        host_url = request.host_url.replace('http://', 'https://')
+
+        if db_response.get('next_page'):
+            next_cursor = kms_encrypt_decrypt_cursor(db_response.get('next_page'), 'encrypt')
+
+            if not url_rule.endswith("/pages"):
+                url_rule = f"{url_rule}/pages"
+
+            db_response['next_page'] = f"{host_url}{url_rule}/{next_cursor}?page_size={page_size}&page_action=next"
+        else:
+            db_response['next_page'] = None
+
+        if page_cursor:
+            prev_cursor = kms_encrypt_decrypt_cursor(page_cursor, 'encrypt')
+            db_response['prev_page'] = f"{host_url}{url_rule}/{prev_cursor}?page_size={page_size}&page_action=prev"
+        else:
+            db_response['prev_page'] = None
+
         return db_response
 
     return make_response(jsonify([]), 204)
@@ -48,6 +131,7 @@ def generic_get_single(**kwargs):  # noqa: E501
 
     :rtype: dict
     """
+
     # Check for Database configuration
     db_existence = check_database_configuration()
     if db_existence:
@@ -79,6 +163,7 @@ def generic_post_single(**kwargs):  # noqa: E501
 
     :rtype: dict
     """
+
     # Check for Database configuration
     db_existence = check_database_configuration()
     if db_existence:
@@ -105,6 +190,7 @@ def generic_put_single(**kwargs):  # noqa: E501
 
     :rtype: dict
     """
+
     # Check for Database configuration
     db_existence = check_database_configuration()
     if db_existence:
@@ -129,33 +215,41 @@ def generic_put_single(**kwargs):  # noqa: E501
     return make_response('Not found', 404)
 
 
-def generic_get_multiple2(**kwargs):  # noqa: E501
-    generic_get_multiple(**kwargs)
+def generic_get_multiple2():  # noqa: E501
+    return generic_get_multiple()
 
 
-def generic_get_multiple3(**kwargs):  # noqa: E501
-    generic_get_multiple(**kwargs)
+def generic_get_multiple3():  # noqa: E501
+    return generic_get_multiple()
+
+
+def generic_get_multiple_page2(**kwargs):  # noqa: E501
+    return generic_get_multiple_page(**kwargs)
+
+
+def generic_get_multiple_page3(**kwargs):  # noqa: E501
+    return generic_get_multiple_page(**kwargs)
 
 
 def generic_get_single2(**kwargs):  # noqa: E501
-    generic_get_single(**kwargs)
+    return generic_get_single(**kwargs)
 
 
 def generic_get_single3(**kwargs):  # noqa: E501
-    generic_get_single(**kwargs)
+    return generic_get_single(**kwargs)
 
 
 def generic_post_single2(**kwargs):  # noqa: E501
-    generic_post_single(**kwargs)
+    return generic_post_single(**kwargs)
 
 
 def generic_post_single3(**kwargs):  # noqa: E501
-    generic_post_single(**kwargs)
+    return generic_post_single(**kwargs)
 
 
 def generic_put_single2(**kwargs):  # noqa: E501
-    generic_put_single(**kwargs)
+    return generic_put_single(**kwargs)
 
 
 def generic_put_single3(**kwargs):  # noqa: E501
-    generic_put_single(**kwargs)
+    return generic_put_single(**kwargs)

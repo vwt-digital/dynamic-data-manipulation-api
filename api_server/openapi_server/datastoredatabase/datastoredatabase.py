@@ -110,34 +110,91 @@ class DatastoreDatabase(DatabaseInterface):
 
         return entity.key.id_or_name
 
-    def get_multiple(self, kind, keys, limit, offset):
+    def get_multiple(self, kind, keys):
         """Returns all entities as a list of dicts
 
         :param kind: Database kind of entity
         :type kind: str
         :param keys: List of entity keys
         :type kind: list
-        :param limit: The number of items to skip before starting to collect the result set
-        :type limit: int
-        :param offset: The numbers of items to return
-        :type offset: int
 
         :rtype: array
         """
 
-        query_params = {}
-        if limit:
-            query_params['limit'] = limit
-        if offset:
-            query_params['offset'] = offset
-
         query = self.db_client.query(kind=kind)
-        entities = list(query.fetch(**query_params))
+        entities = list(query.fetch())
 
         if entities:
             return create_response(keys, entities)
 
         return None
+
+    def get_multiple_page(self, kind, keys, page_cursor, page_size, page_action):
+        """Returns all entities
+
+        :param kind: Database kind of entity
+        :type kind: str
+        :param keys: List of entity keys
+        :type kind: list
+        :param page_cursor: The cursor for retrieve a specific page
+        :type page_cursor: str
+        :param page_size: The numbers of items within a page
+        :type page_size: int
+        :param page_action: Selector to get next or previous page based on the cursor
+        :type page_action: str
+
+        :rtype: dict
+        """
+
+        if 'results' not in keys or len(keys['results']) <= 0:
+            raise ValueError("Key 'results' is not within response schema")
+
+        query_params = {
+            'limit': page_size
+        }
+
+        if page_cursor:
+            query_params['start_cursor'] = page_cursor
+
+        query = self.db_client.query(kind=kind)
+
+        # When the previous page is requested and the latest cursor from the original query is used
+        # to get results in reverse.
+        if page_action == 'prev':
+            query.order = ['__key__']
+        else:
+            query.order = ['-__key__']
+
+        query_iter = query.fetch(**query_params)  # Execute query
+        current_page = next(query_iter.pages)  # Setting current iterator page
+        db_data = list(current_page)  # Set page results list
+
+        response = {
+            'results': keys['results']
+        }
+
+        # Return results
+        if db_data:
+            response = create_response(response, db_data)
+
+            if page_action == 'prev':
+                if current_app.db_table_id:
+                    response['results'] = sorted(
+                        response['results'], key=lambda i: i[current_app.db_table_id], reverse=True)
+                next_cursor = page_cursor  # Grab current cursor for next page
+            else:
+                next_cursor = query_iter.next_page_token.decode() if \
+                    query_iter.next_page_token else None  # Grab new cursor for next page
+        else:
+            response['results'] = []
+            next_cursor = None
+
+        # Create response object
+        response['status'] = 'success'
+        response['page_size'] = page_size
+        response['next_page'] = next_cursor
+
+        return response
 
 
 def create_entity_object(keys, entity, method):
