@@ -458,6 +458,11 @@ The API can be deployed as serverless container to [Cloud Run](https://cloud.goo
 ready to run on Cloud Run. Use the example build steps defined in [cloudbuild.example.yaml](api_server/cloudbuild.example.yaml)
 to deploy this API.
 
+#### App Engine
+The API can also be deployed to an [App Engine](https://cloud.google.com/appengine/docs/the-appengine-environments). To 
+make sure the app will be created and works with the API, use the `app.example.yaml` to create the correct instance. Use 
+the example build steps defined in [cloudbuild.example.yaml](api_server/cloudbuild.example.yaml) to deploy this API.
+
 
 ## License
 This API is licensed under the [GPL-3](https://www.gnu.org/licenses/gpl-3.0.en.html) License
