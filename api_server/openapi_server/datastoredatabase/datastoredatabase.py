@@ -215,7 +215,7 @@ class DatastoreDatabase(DatabaseInterface):
                     if not filter_value:
                         raise ValueError(
                             f"Value '{args[filter['name']]}' for query param '{filter['name']}' is "
-                            + f"not of type '{filter_datatype}'")
+                            f"not of type '{filter_datatype}'")
 
                     query = query.add_filter(filter['field'], filter['comparison'], filter_value)
 
@@ -230,7 +230,7 @@ def data_type_validator(value, type):
             value = int(value)
         if type == 'boolean':
             value = bool(value)
-        if type == 'datetime':
+        if type == 'date-time':
             value = datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ")
         if type == 'date':
             value = datetime.strptime(value, "%Y-%m-%d")
