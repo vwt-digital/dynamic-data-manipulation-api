@@ -110,18 +110,20 @@ class DatastoreDatabase(DatabaseInterface):
 
         return entity.key.id_or_name
 
-    def get_multiple(self, kind, keys):
+    def get_multiple(self, kind, keys, filters):
         """Returns all entities as a list of dicts
 
         :param kind: Database kind of entity
         :type kind: str
         :param keys: List of entity keys
         :type kind: list
+        :param filters: List of query filters
+        :type kind: list
 
         :rtype: array
         """
 
-        query = self.db_client.query(kind=kind)
+        query = self.create_db_query(kind, filters)
         entities = list(query.fetch())
 
         if entities:
@@ -129,12 +131,14 @@ class DatastoreDatabase(DatabaseInterface):
 
         return None
 
-    def get_multiple_page(self, kind, keys, page_cursor, page_size, page_action):
+    def get_multiple_page(self, kind, keys, filters, page_cursor, page_size, page_action):
         """Returns all entities
 
         :param kind: Database kind of entity
         :type kind: str
         :param keys: List of entity keys
+        :type kind: list
+        :param filters: List of query filters
         :type kind: list
         :param page_cursor: The cursor for retrieve a specific page
         :type page_cursor: str
@@ -156,7 +160,7 @@ class DatastoreDatabase(DatabaseInterface):
         if page_cursor:
             query_params['start_cursor'] = page_cursor
 
-        query = self.db_client.query(kind=kind)
+        query = self.create_db_query(kind, filters)
 
         # When the previous page is requested and the latest cursor from the original query is used
         # to get results in reverse.
@@ -195,6 +199,46 @@ class DatastoreDatabase(DatabaseInterface):
         response['next_page'] = next_cursor
 
         return response
+
+    def create_db_query(self, kind, filters):
+        query = self.db_client.query(kind=kind)
+
+        if filters:
+            args = request.args.to_dict()
+
+            for filter in filters:
+                if filter['name'] in args:
+                    filter_datatype = filter['schema']['format'] if \
+                        filter['schema'].get('format') else filter['schema']['type']
+                    filter_value = data_type_validator(args[filter['name']], filter_datatype)
+
+                    if not filter_value:
+                        raise ValueError(
+                            f"Value '{args[filter['name']]}' for query param '{filter['name']}' is " +
+                            f"not of type '{filter_datatype}'")
+
+                    query = query.add_filter(filter['field'], filter['comparison'], filter_value)
+
+        return query
+
+
+def data_type_validator(value, type):
+    try:
+        if not type:
+            return value
+        if type == 'integer' or type == 'number':
+            value = int(value)
+        if type == 'boolean':
+            value = bool(value)
+        if type == 'datetime':
+            value = datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ")
+        if type == 'date':
+            value = datetime.strptime(value, "%Y-%m-%d")
+    except Exception:
+        pass
+        return None
+    else:
+        return value
 
 
 def create_entity_object(keys, entity, method):

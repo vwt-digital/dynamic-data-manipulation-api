@@ -63,7 +63,8 @@ def generic_get_multiple():  # noqa: E501
         return db_existence
 
     try:
-        db_response = current_app.db_client.get_multiple(kind=current_app.db_table_name, keys=current_app.db_keys)
+        db_response = current_app.db_client.get_multiple(
+            kind=current_app.db_table_name, keys=current_app.db_keys, filters=current_app.request_queries)
     except ValueError as e:
         return make_response(jsonify(str(e)), 400)
 
@@ -93,8 +94,8 @@ def generic_get_multiple_page(**kwargs):  # noqa: E501
 
     try:
         db_response = current_app.db_client.get_multiple_page(
-            kind=current_app.db_table_name, keys=current_app.db_keys, page_cursor=page_cursor, page_size=page_size,
-            page_action=page_action)
+            kind=current_app.db_table_name, keys=current_app.db_keys, filters=current_app.request_queries,
+            page_cursor=page_cursor, page_size=page_size, page_action=page_action)
     except ValueError as e:
         return make_response(jsonify(str(e)), 400)
 

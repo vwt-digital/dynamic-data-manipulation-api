@@ -60,6 +60,7 @@ with app.app.app_context():
     current_app.db_table_id = None
     current_app.db_keys = None
     current_app.request_id = None
+    current_app.request_queries = None
     current_app.user = None
     current_app.token = None
 
@@ -72,8 +73,8 @@ with app.app.app_context():
 
 @app.app.before_request
 def before_request_func():
-    current_app.db_table_name, current_app.db_table_id, \
-        current_app.db_keys, current_app.request_id = openapi_spec.get_database_info(request)
+    current_app.db_table_name, current_app.db_table_id, current_app.db_keys, current_app.request_id, \
+        current_app.request_queries = openapi_spec.get_database_info(request)
 
 
 @app.app.after_request

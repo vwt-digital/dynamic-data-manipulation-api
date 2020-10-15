@@ -1,6 +1,7 @@
 import yaml
 import re
 import operator
+import logging
 
 from functools import reduce
 
@@ -108,13 +109,53 @@ def get_schema_id(spec, schema):
     return schema_id
 
 
-def get_request_param(path_item_object):
+def get_request_id(path_item_object):
     """Returns the first request parameter name"""
     if 'parameters' in path_item_object and 'name' in path_item_object['parameters'][0] and \
-            path_item_object['parameters'][0]['name'] not in ['limit', 'offset']:
+            path_item_object['parameters'][0]['name'] not in ['page_cursor', 'page_size', 'page_action'] and \
+            path_item_object['parameters'][0]['name']['in'] == 'path':
         return path_item_object['parameters'][0]['name']
 
     return None
+
+
+def get_request_query_filters(spec, path_item_object):
+    """Returns all query filters from the request"""
+    query_filters = []
+    comparisons = {
+        'equal_to': '==', 'not_equal_to': '!=', 'less_than': '<', 'less_than_or_equal_to': '<=', 'greater_than': '>',
+        'greater_than_or_equal_to': '>='}
+
+    for filter in path_item_object.get('parameters', []):
+        filter = get_schema(spec, filter['$ref']) if '$ref' in filter else filter
+
+        if filter['name'] not in ['page_cursor', 'page_size', 'page_action']:
+            for key in ['schema', 'x-query-filter-comparison', 'x-query-filter-field']:
+                if key not in filter:
+                    logging.info(f"Error: query param '{filter['name']}' is missing the required '{key}'")
+                    continue
+
+            if filter['x-query-filter-comparison'] not in comparisons:
+                logging.info(
+                    f"Error: query param '{filter['name']}' has a not supported comparison: " +
+                    f"'{filter['x-query-filter-comparison']}'")
+                continue
+
+            if filter['schema'].get('type') not in ['string', 'number', 'integer', 'boolean']:
+                logging.info(
+                    f"Error: query param '{filter['name']}' has a not supported type: " +
+                    f"'{filter['schema'].get('type')}'")
+                continue
+
+            query_filters.append({
+                'comparison': comparisons[filter['x-query-filter-comparison']],
+                'field': filter['x-query-filter-field'],
+                'name': filter['name'],
+                'schema': filter['schema'],
+                'required': bool(filter.get('required', False))
+            })
+
+    return query_filters
 
 
 def get_database_info(request):
@@ -123,6 +164,7 @@ def get_database_info(request):
     db_table_id = None
     db_keys = None
     request_id = None
+    request_queries = None
 
     spec = get_specification()
     request_method = str(request.method).lower()
@@ -132,11 +174,12 @@ def get_database_info(request):
         path_item_object = path_object[request_method]
         db_table_name = path_object.get('x-db-table-name', None)
 
-        request_id = get_request_param(path_item_object)
+        request_id = get_request_id(path_item_object)
+        request_queries = get_request_query_filters(spec, path_item_object)
 
         path_schema_reference = get_path_schema_reference(path_item_object, request_method)
         path_schema = get_schema(spec, path_schema_reference)
         db_table_id = get_schema_id(spec, path_schema)
         db_keys = get_schema_properties(spec, path_schema, request_method)
 
-    return db_table_name, db_table_id, db_keys, request_id
+    return db_table_name, db_table_id, db_keys, request_id, request_queries
