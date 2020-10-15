@@ -137,14 +137,14 @@ def get_request_query_filters(spec, path_item_object):
 
             if filter['x-query-filter-comparison'] not in comparisons:
                 logging.info(
-                    f"Error: query param '{filter['name']}' has a not supported comparison: " +
-                    f"'{filter['x-query-filter-comparison']}'")
+                    f"Error: query param '{filter['name']}' has a not supported comparison: "
+                    + f"'{filter['x-query-filter-comparison']}'")
                 continue
 
             if filter['schema'].get('type') not in ['string', 'number', 'integer', 'boolean']:
                 logging.info(
-                    f"Error: query param '{filter['name']}' has a not supported type: " +
-                    f"'{filter['schema'].get('type')}'")
+                    f"Error: query param '{filter['name']}' has a not supported type: "
+                    + f"'{filter['schema'].get('type')}'")
                 continue
 
             query_filters.append({
