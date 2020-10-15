@@ -210,8 +210,8 @@ class FirestoreDatabase(DatabaseInterface):
 
                     if not filter_value:
                         raise ValueError(
-                            f"Value '{args[filter['name']]}' for query param '{filter['name']}' is " +
-                            f"not of type '{filter_datatype}'")
+                            f"Value '{args[filter['name']]}' for query param '{filter['name']}' is "
+                            + f"not of type '{filter_datatype}'")
 
                     query = query.where(filter['field'], filter['comparison'], filter_value)
 
