@@ -110,13 +110,13 @@ def generic_get_multiple_page(**kwargs):  # noqa: E501
             if not url_rule.endswith("/pages"):
                 url_rule = f"{url_rule}/pages"
 
-            db_response['next_page'] = f"{host_url}{url_rule}/{next_cursor}?page_size={page_size}&page_action=next"
+            db_response['next_page'] = f"{host_url}/{url_rule}/{next_cursor}?page_size={page_size}&page_action=next"
         else:
             db_response['next_page'] = None
 
         if page_cursor:
             prev_cursor = kms_encrypt_decrypt_cursor(page_cursor, 'encrypt')
-            db_response['prev_page'] = f"{host_url}{url_rule}/{prev_cursor}?page_size={page_size}&page_action=prev"
+            db_response['prev_page'] = f"{host_url}/{url_rule}/{prev_cursor}?page_size={page_size}&page_action=prev"
         else:
             db_response['prev_page'] = None
 
