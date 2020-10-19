@@ -70,7 +70,7 @@ _For each definition are three implementations (e.g. `generic_post_single`, `gen
 
 #### Path parameter
 To create an endpoint for single entities, a path parameter has to be defined. This path parameter will be used to retrieve or update
-a single entity in the specified database table(see [Database Reference](#database-reference)). The name of this parameter 
+a single entity in the specified database table (see [Database Reference](#database-reference)). The name of this parameter 
 will be used to retrieve the identifier from the request and passed towards the database connections.
 
 The parameter can be defined as described in the example below:
@@ -89,6 +89,39 @@ paths:
             format: uuid
             type: string
           style: simple
+      x-openapi-router-controller: openapi_server.controllers.default_controller
+~~~
+
+#### Query parameters
+It is also possible to create query filters for the request of multiple entities (`generic_get_multiple`, `generic_get_multiple_page`).
+These filters can be added to the `parameters` attribute, like described within [Path parameter](#path-parameter). The
+only difference is the place the parameter is put: within the query (`in: query`).
+
+To enable the query filters you also have to add the fields described below:
+- `x-query-filter-comparison`: A comparison type for the filter. Can be of the following: `equal_to`, `not_equal_to`, 
+    `less_than`, `less_than_or_equal_to`, `greater_than`, `greater_than_or_equal_to`;
+- `x-query-filter-field`: The field the filter is active on.
+
+> Bare in mind there are some restrictions on the combination of multiple query parameters, as described on the 
+> [Firestore](https://firebase.google.com/docs/firestore/query-data/queries#limitations) and 
+> [Datastore](https://cloud.google.com/datastore/docs/concepts/queries#restrictions_on_queries) query pages.
+
+Below an example is defined where a filter is added on the `name` field.
+~~~yaml
+paths:
+  /pets:
+    get:
+      description: Get a list of all pets
+      operationId: generic_get_multiple
+      parameters:
+        - explode: false
+          in: query
+          name: pet_name
+          required: true
+          schema:
+            type: string
+          x-query-filter-comparison: equal_to
+          x-query-filter-field: name
       x-openapi-router-controller: openapi_server.controllers.default_controller
 ~~~
 
@@ -457,6 +490,11 @@ To deploy the API to the Google Cloud Platform a couple of options are available
 The API can be deployed as serverless container to [Cloud Run](https://cloud.google.com/run/docs). The `Dockerfile` can be used to create a container
 ready to run on Cloud Run. Use the example build steps defined in [cloudbuild.example.yaml](api_server/cloudbuild.example.yaml)
 to deploy this API.
+
+#### App Engine
+The API can also be deployed to an [App Engine](https://cloud.google.com/appengine/docs/the-appengine-environments). To 
+make sure the app will be created and works with the API, use the `app.example.yaml` to create the correct instance. Use 
+the example build steps defined in [cloudbuild.example.yaml](api_server/cloudbuild.example.yaml) to deploy this API.
 
 
 ## License

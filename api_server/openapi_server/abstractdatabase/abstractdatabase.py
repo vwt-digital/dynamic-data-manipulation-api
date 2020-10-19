@@ -20,9 +20,9 @@ class DatabaseInterface(ABC):
         pass
 
     @abstractmethod
-    def get_multiple(self, kind, keys):
+    def get_multiple(self, kind, keys, filters):
         pass
 
     @abstractmethod
-    def get_multiple_page(self, kind, keys, page_cursor, page_size, page_action):
+    def get_multiple_page(self, kind, keys, filters, page_cursor, page_size, page_action):
         pass

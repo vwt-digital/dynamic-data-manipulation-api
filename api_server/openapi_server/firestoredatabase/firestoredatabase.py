@@ -1,9 +1,9 @@
 import config
 import logging
-import datetime
 import json
 import types
 
+from datetime import datetime
 from flask import current_app, request
 from google.cloud import firestore
 from openapi_server.abstractdatabase import DatabaseInterface
@@ -35,7 +35,7 @@ class FirestoreDatabase(DatabaseInterface):
                         "attributes_changed": json.dumps(changed),
                         "table_id": entity_id,
                         "table_name": current_app.db_table_name,
-                        "timestamp": datetime.datetime.utcnow().isoformat(timespec="seconds") + 'Z',
+                        "timestamp": datetime.utcnow().isoformat(timespec="seconds") + 'Z',
                         "user": current_app.user if current_app.user is not None else request.remote_addr
                     })
             except Exception as e:
@@ -112,31 +112,35 @@ class FirestoreDatabase(DatabaseInterface):
 
         return doc_ref.id
 
-    def get_multiple(self, kind, keys):
+    def get_multiple(self, kind, keys, filters):
         """Returns all entities as a list of dicts
 
         :param kind: Database kind of entity
         :type kind: str
         :param keys: List of entity keys
         :type kind: list
+        :param filters: List of query filters
+        :type kind: list
 
         :rtype: array
         """
 
-        users_ref = self.db_client.collection(kind)
-        docs = users_ref.stream()
+        docs_ref = self.create_db_query(kind, filters)
+        docs = docs_ref.stream()
 
         if docs:
             return create_response(keys, docs)
 
         return None
 
-    def get_multiple_page(self, kind, keys, page_cursor, page_size, page_action):
+    def get_multiple_page(self, kind, keys, filters, page_cursor, page_size, page_action):
         """Returns all entities as a list of dicts
 
         :param kind: Database kind of entity
         :type kind: str
         :param keys: List of entity keys
+        :type kind: list
+        :param filters: List of query filters
         :type kind: list
         :param page_cursor: The cursor for retrieve a specific page
         :type page_cursor: str
@@ -148,7 +152,7 @@ class FirestoreDatabase(DatabaseInterface):
         :rtype: dict
         """
 
-        docs_ref = self.db_client.collection(kind)
+        docs_ref = self.create_db_query(kind, filters)
         docs_ref = docs_ref.limit(page_size)
 
         if page_cursor:
@@ -191,6 +195,45 @@ class FirestoreDatabase(DatabaseInterface):
         docs = self.db_client.collection(kind).limit(1).start_after(snapshot).stream()
 
         return True if len(list(docs)) > 0 else False
+
+    def create_db_query(self, kind, filters):
+        query = self.db_client.collection(kind)
+
+        if filters:
+            args = request.args.to_dict()
+
+            for filter in filters:
+                if filter['name'] in args:
+                    filter_datatype = filter['schema']['format'] if \
+                        filter['schema'].get('format') else filter['schema']['type']
+                    filter_value = data_type_validator(args[filter['name']], filter_datatype)
+
+                    if not filter_value:
+                        raise ValueError(f"Value '{args[filter['name']]}' for query param "
+                                         f"'{filter['name']}' is not of type '{filter_datatype}'")
+
+                    query = query.where(filter['field'], filter['comparison'], filter_value)
+
+        return query
+
+
+def data_type_validator(value, type):
+    try:
+        if not type:
+            return value
+        if type == 'integer' or type == 'number':
+            value = int(value)
+        if type == 'boolean':
+            value = bool(value)
+        if type == 'date-time':
+            value = datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ")
+        if type == 'date':
+            value = datetime.strptime(value, "%Y-%m-%d")
+    except Exception:
+        pass
+        return None
+    else:
+        return value
 
 
 def create_entity_object(keys, entity, method):
