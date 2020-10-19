@@ -24,6 +24,7 @@ The available variables are:
 - `OAUTH_EXPECTED_AUDIENCE`: `[string]` The Azure AD audience needed for access
 - `OAUTH_EXPECTED_ISSUER`: `[string]` The Azure AD issuer ID
 - `OAUTH_JWKS_URL`: `[string]` The Azure AD URL for JWK info
+- `BASE_URL`: `[string]` The base url of the API server
 - `ORIGINS`: `[required]` `[list]` A list containing allowed origins for access
 - `DATABASE_TYPE`: `[required]` `[string]` The identifier for the database to be used (see [Database Type](#database-type))
 - `AUDIT_LOGS_NAME`: `[string]` The identifier for the Database table where the audit logs will be inserted (see [Audit logging](#audit-logging))
