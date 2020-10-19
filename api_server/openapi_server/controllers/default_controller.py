@@ -101,7 +101,8 @@ def generic_get_multiple_page(**kwargs):  # noqa: E501
 
     if db_response:
         url_rule = re.sub(r'<.*?>', '', str(request.url_rule)).strip('/')
-        host_url = request.host_url.replace('http://', 'https://')
+        host_url = config.BASE_URL.rstrip('/') if hasattr(config, 'BASE_URL') else \
+            request.host_url.replace('http://', 'https://')
 
         if db_response.get('next_page'):
             next_cursor = kms_encrypt_decrypt_cursor(db_response.get('next_page'), 'encrypt')
