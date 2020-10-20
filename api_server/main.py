@@ -6,7 +6,7 @@ from Flask_AuditLog import AuditLog
 from Flask_No_Cache import CacheControl
 from flask_sslify import SSLify
 
-app = openapi_server.app
+app = openapi_server.get_app()
 flaskapp = app.app
 
 logging.basicConfig(level=logging.INFO)

@@ -41,55 +41,60 @@ def validate_schema(self, data, url):
     return None
 
 
-RequestBodyValidator.validate_schema = validate_schema
+def get_app():
+    """
+    Returns the OpenAPI app
+    """
 
-app = connexion.App(__name__, specification_dir='./openapi/')
-app.app.json_encoder = encoder.JSONEncoder
-app.add_api('openapi.yaml',
-            arguments={'title': 'Dynamic Data Manipulator API'},
-            strict_validation=True)
-if 'GAE_INSTANCE' in os.environ or 'K_SERVICE' in os.environ:
-    CORS(app.app, origins=config.ORIGINS)
-else:
-    CORS(app.app)
+    RequestBodyValidator.validate_schema = validate_schema
 
-with app.app.app_context():
-    current_app.__pii_filter_def__ = None
-    current_app.db_client = None
-    current_app.db_table_name = None
-    current_app.db_table_id = None
-    current_app.db_keys = None
-    current_app.request_id = None
-    current_app.request_queries = None
-    current_app.user = None
-    current_app.token = None
+    app = connexion.App(__name__, specification_dir='./openapi/')
+    app.app.json_encoder = encoder.JSONEncoder
+    app.add_api('openapi.yaml',
+                arguments={'title': 'Dynamic Data Manipulator API'},
+                strict_validation=True)
+    if 'GAE_INSTANCE' in os.environ or 'K_SERVICE' in os.environ:
+        CORS(app.app, origins=config.ORIGINS)
+    else:
+        CORS(app.app)
 
-    if hasattr(config, 'DATABASE_TYPE'):
-        if config.DATABASE_TYPE == 'datastore':
-            current_app.db_client = DatastoreDatabase()
-        elif config.DATABASE_TYPE == 'firestore':
-            current_app.db_client = FirestoreDatabase()
+    with app.app.app_context():
+        current_app.__pii_filter_def__ = None
+        current_app.db_client = None
+        current_app.db_table_name = None
+        current_app.db_table_id = None
+        current_app.db_keys = None
+        current_app.request_id = None
+        current_app.request_queries = None
+        current_app.user = None
+        current_app.token = None
 
+        if hasattr(config, 'DATABASE_TYPE'):
+            if config.DATABASE_TYPE == 'datastore':
+                current_app.db_client = DatastoreDatabase()
+            elif config.DATABASE_TYPE == 'firestore':
+                current_app.db_client = FirestoreDatabase()
 
-@app.app.before_request
-def before_request_func():
-    current_app.db_table_name, current_app.db_table_id, current_app.db_keys, current_app.request_id, \
-        current_app.request_queries = openapi_spec.get_database_info(request)
+    @app.app.before_request
+    def before_request_func():
+        current_app.db_table_name, current_app.db_table_id, current_app.db_keys, current_app.request_id, \
+            current_app.request_queries = openapi_spec.get_database_info(request)
 
+    @app.app.after_request
+    def add_header(response):
+        response.headers['Content-Security-Policy'] = "default-src 'none'; script-src 'self' 'unsafe-inline'; " \
+                                                      "img-src 'self' data:; font-src 'self' fonts.gstatic.com data:; " \
+                                                      "style-src 'self' fonts.googleapis.com 'unsafe-inline'; " \
+                                                      "style-src-elem 'self' fonts.googleapis.com 'unsafe-inline'; " \
+                                                      "connect-src 'self' opensource.zalando.com; form-action 'none'; frame-src data:; " \
+                                                      "frame-ancestors 'none'"
+        response.headers['X-Frame-Options'] = "SAMEORIGIN"
+        response.headers['X-Content-Type-Options'] = "nosniff"
+        response.headers['Referrer-Policy'] = "no-referrer-when-downgrade"
+        response.headers['Feature-Policy'] = "geolocation 'none'; midi 'none'; notifications 'none'; push 'none'; " \
+                                             "sync-xhr 'none'; microphone 'none'; camera 'none'; " \
+                                             "magnetometer 'none'; gyroscope 'none'; speaker 'none'; vibrate 'none'; " \
+                                             "fullscreen 'none'; payment 'none';"
+        return response
 
-@app.app.after_request
-def add_header(response):
-    response.headers['Content-Security-Policy'] = "default-src 'none'; script-src 'self' 'unsafe-inline'; " \
-                                                  "img-src 'self' data:; font-src 'self' fonts.gstatic.com data:; " \
-                                                  "style-src 'self' fonts.googleapis.com 'unsafe-inline'; " \
-                                                  "style-src-elem 'self' fonts.googleapis.com 'unsafe-inline'; " \
-                                                  "connect-src 'self' opensource.zalando.com; form-action 'none'; frame-src data:; " \
-                                                  "frame-ancestors 'none'"
-    response.headers['X-Frame-Options'] = "SAMEORIGIN"
-    response.headers['X-Content-Type-Options'] = "nosniff"
-    response.headers['Referrer-Policy'] = "no-referrer-when-downgrade"
-    response.headers['Feature-Policy'] = "geolocation 'none'; midi 'none'; notifications 'none'; push 'none'; " \
-                                         "sync-xhr 'none'; microphone 'none'; camera 'none'; " \
-                                         "magnetometer 'none'; gyroscope 'none'; speaker 'none'; vibrate 'none'; " \
-                                         "fullscreen 'none'; payment 'none';"
-    return response
+    return app
