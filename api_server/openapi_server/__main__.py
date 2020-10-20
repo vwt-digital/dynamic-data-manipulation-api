@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
-from . import app
+from . import get_app
 
 
 def main():
+    app = get_app()
     app.run(port=8080)
 
 
