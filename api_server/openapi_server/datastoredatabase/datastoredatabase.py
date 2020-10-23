@@ -247,10 +247,13 @@ def create_entity_object(keys, entity, method):
         if key == current_app.db_table_id:
             entity_to_return[key] = entity.key.id_or_name
         else:
-            if method == 'get':
-                entity_to_return[key] = entity.get(key, None)
-            elif key in entity:
-                entity_to_return[key] = entity[key]
+            try:
+                if method == 'get':
+                    entity_to_return[key] = entity.get(key, None)
+                elif key in entity:
+                    entity_to_return[key] = entity[key]
+            except KeyError:
+                entity_to_return[key] = None
 
         if keys[key].get('required', False) and method != 'get' and not entity.get(key, None):
             raise ValueError(f"Property '{key}' is required")
