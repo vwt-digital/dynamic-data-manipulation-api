@@ -11,7 +11,7 @@ from connexion.lifecycle import ConnexionResponse
 from connexion.utils import is_null
 from flask_cors import CORS
 from jsonschema import ValidationError
-from flask import request, current_app
+from flask import request, current_app, g
 
 from openapi_server.datastoredatabase import DatastoreDatabase
 from openapi_server.firestoredatabase import FirestoreDatabase
@@ -61,13 +61,13 @@ def get_app():
     with app.app.app_context():
         current_app.__pii_filter_def__ = None
         current_app.db_client = None
-        current_app.db_table_name = None
-        current_app.db_table_id = None
-        current_app.db_keys = None
-        current_app.request_id = None
-        current_app.request_queries = None
-        current_app.user = None
-        current_app.token = None
+        g.db_table_name = None
+        g.db_table_id = None
+        g.db_keys = None
+        g.request_id = None
+        g.request_queries = None
+        g.user = None
+        g.token = None
 
         if hasattr(config, 'DATABASE_TYPE'):
             if config.DATABASE_TYPE == 'datastore':
@@ -77,8 +77,8 @@ def get_app():
 
     @app.app.before_request
     def before_request_func():
-        current_app.db_table_name, current_app.db_table_id, current_app.db_keys, current_app.request_id, \
-            current_app.request_queries = openapi_spec.get_database_info(request)
+        g.db_table_name, g.db_table_id, g.db_keys, g.request_id, \
+            g.request_queries = openapi_spec.get_database_info(request)
 
     @app.app.after_request
     def add_header(response):

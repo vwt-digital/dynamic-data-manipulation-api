@@ -4,18 +4,18 @@ import re
 import base64
 import logging
 
-from flask import request, current_app, jsonify, make_response
+from flask import request, current_app, g, jsonify, make_response
 from google.cloud import kms
 
 
 def check_database_configuration():
-    if current_app.db_client is None or current_app.db_table_name is None or \
-            current_app.db_table_id is None or current_app.db_keys is None:
+    if current_app.db_client is None or g.db_table_name is None or \
+            g.db_table_id is None or g.db_keys is None:
         return make_response(jsonify("Database information insufficient"), 500)
 
 
 def check_identifier(kwargs):
-    if current_app.request_id is None or current_app.request_id not in kwargs:
+    if g.request_id is None or g.request_id not in kwargs:
         return make_response(jsonify("Identifier name not found"), 500)
 
 
@@ -64,7 +64,7 @@ def generic_get_multiple():  # noqa: E501
 
     try:
         db_response = current_app.db_client.get_multiple(
-            kind=current_app.db_table_name, keys=current_app.db_keys, filters=current_app.request_queries)
+            kind=g.db_table_name, keys=g.db_keys, filters=g.request_queries)
     except ValueError as e:
         return make_response(jsonify(str(e)), 400)
 
@@ -94,7 +94,7 @@ def generic_get_multiple_page(**kwargs):  # noqa: E501
 
     try:
         db_response = current_app.db_client.get_multiple_page(
-            kind=current_app.db_table_name, keys=current_app.db_keys, filters=current_app.request_queries,
+            kind=g.db_table_name, keys=g.db_keys, filters=g.request_queries,
             page_cursor=page_cursor, page_size=page_size, page_action=page_action)
     except ValueError as e:
         return make_response(jsonify(str(e)), 400)
@@ -147,7 +147,7 @@ def generic_get_single(**kwargs):  # noqa: E501
     # Call DB func
     try:
         db_response = current_app.db_client.get_single(
-            id=kwargs.get(current_app.request_id), kind=current_app.db_table_name, keys=current_app.db_keys)
+            id=kwargs.get(g.request_id), kind=g.db_table_name, keys=g.db_keys)
     except ValueError as e:
         return make_response(jsonify(str(e)), 400)
 
@@ -174,7 +174,7 @@ def generic_post_single(**kwargs):  # noqa: E501
     # Call DB func
     try:
         db_response = current_app.db_client.post_single(
-            body=kwargs.get('body', {}), kind=current_app.db_table_name, keys=current_app.db_keys)
+            body=kwargs.get('body', {}), kind=g.db_table_name, keys=g.db_keys)
     except ValueError as e:
         return make_response(jsonify(str(e)), 400)
 
@@ -206,8 +206,8 @@ def generic_put_single(**kwargs):  # noqa: E501
     # Call DB func
     try:
         db_response = current_app.db_client.put_single(
-            id=kwargs.get(current_app.request_id), body=kwargs.get('body', {}), kind=current_app.db_table_name,
-            keys=current_app.db_keys)
+            id=kwargs.get(g.request_id), body=kwargs.get('body', {}), kind=g.db_table_name,
+            keys=g.db_keys)
     except ValueError as e:
         return make_response(jsonify(str(e)), 400)
 

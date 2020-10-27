@@ -1,7 +1,7 @@
 import config
 from jwkaas import JWKaas
 
-from flask import current_app
+from flask import request, g
 
 my_jwkaas = None
 
@@ -24,9 +24,10 @@ def info_from_oAuth2(token):
     :rtype: dict | None
     """
     result = my_jwkaas.get_connexion_token_info(token)
+    g.ip = request.remote_addr
 
     if result is not None:
-        current_app.user = result.get('upn', '')
-        current_app.token = result
+        g.user = result.get('upn')
+        g.token = result
 
     return result
