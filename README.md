@@ -53,7 +53,7 @@ or posted to. These definitions make sure when a path is requested a function wi
 - `generic_post_single`: Creates a new entity in a database table, based on a request body;
 - `generic_put_single`: Updates an existing entity from a database table, based on a `unique_id` and a request body.
 
-You can add these operations with help op `operationId` within a path's method:
+You can add these operations with help of `operationId` within a path's method:
 ~~~yaml
 paths:
   /pets:
@@ -408,7 +408,7 @@ in the `security_controller`.
 To create a security definition use the example below:
 ~~~yaml
 components:
-  securityschemas:
+  securitySchemes:
     oauth2:
       type: oauth2
       description: This API uses OAuth 2 with the implicit grant flow.
