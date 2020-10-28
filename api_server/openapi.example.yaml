@@ -169,7 +169,7 @@ components:
         breed:
           maxLength: 100
           type: string
-  securityschemas:
+  securitySchemes:
     oauth2:
       type: oauth2
       description: This API uses OAuth 2 with the implicit grant flow.
