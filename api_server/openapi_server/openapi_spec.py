@@ -118,7 +118,7 @@ def get_request_id(path_item_object):
     """Returns the first request parameter name"""
     if 'parameters' in path_item_object and 'name' in path_item_object['parameters'][0] and \
             path_item_object['parameters'][0]['name'] not in ['page_cursor', 'page_size', 'page_action'] and \
-            path_item_object['parameters'][0]['name']['in'] == 'path':
+            path_item_object['parameters'][0]['in'] == 'path':
         return path_item_object['parameters'][0]['name']
 
     return None
@@ -134,7 +134,7 @@ def get_request_query_filters(spec, path_item_object):
     for filter in path_item_object.get('parameters', []):
         filter = get_schema(spec, filter['$ref']) if '$ref' in filter else filter
 
-        if filter['name'] not in ['page_cursor', 'page_size', 'page_action']:
+        if filter['in'] == 'query' and filter['name'] not in ['page_cursor', 'page_size', 'page_action']:
             for key in ['schema', 'x-query-filter-comparison', 'x-query-filter-field']:
                 if key not in filter:
                     logging.info(f"Error: query param '{filter['name']}' is missing the required '{key}'")
