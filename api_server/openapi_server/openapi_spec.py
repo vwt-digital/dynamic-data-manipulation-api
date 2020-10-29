@@ -74,7 +74,7 @@ def get_schema_properties(spec, schema, request_method):
     required_properties = schema.get('required', [])
 
     for field in schema_properties:
-        if schema_properties[field].get('type') in ['array', 'dict']:
+        if schema_properties[field].get('type') in ['array', 'dict'] and '$ref' not in schema_properties[field]:
             for key in schema_properties[field]:
                 if type(schema_properties[field][key]) == dict and '$ref' in schema_properties[field][key]:
                     nested_schema = get_schema(spec, schema_properties[field][key]['$ref'])
@@ -84,11 +84,19 @@ def get_schema_properties(spec, schema, request_method):
             properties[field] = schema_properties[field]
         elif request_method == 'get':
             if '$ref' in schema_properties[field]:
-                nested_schema = get_schema(spec, schema_properties[field]['$ref'])
-                properties[field] = get_schema_properties(spec, nested_schema, request_method) if \
-                    'properties' in nested_schema else nested_schema
+                schema_properties[field] = get_schema(spec, schema_properties[field]['$ref'])
+
+                if 'properties' in schema_properties[field]:
+                    properties[field] = {
+                        '_properties': get_schema_properties(spec, schema_properties[field], request_method)
+                    }
             else:
                 properties[field] = schema_properties[field]
+
+        if 'properties' in schema_properties[field]:
+            properties[field] = {
+                '_properties': schema_properties[field]['properties']
+            }
 
         if field in required_properties:
             properties[field]['required'] = True
