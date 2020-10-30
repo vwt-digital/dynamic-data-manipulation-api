@@ -1,3 +1,5 @@
+# flake8: noqa
+
 import operator
 
 from abc import ABC, abstractmethod
