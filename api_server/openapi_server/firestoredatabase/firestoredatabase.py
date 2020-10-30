@@ -6,7 +6,7 @@ import types
 from datetime import datetime
 from flask import g, request
 from google.cloud import firestore
-from openapi_server.abstractdatabase import DatabaseInterface
+from openapi_server.abstractdatabase import DatabaseInterface, EntityParser
 
 
 class FirestoreDatabase(DatabaseInterface):
@@ -82,9 +82,7 @@ class FirestoreDatabase(DatabaseInterface):
         doc = doc_ref.get()
 
         if doc.exists:
-            new_doc = create_entity_object(keys, body, 'put')
-            print(new_doc)
-
+            new_doc = EntityParser().parse(keys, body, 'put', id)
             doc_ref.update(new_doc)
 
             self.process_audit_logging(old_data=doc, new_data=doc_ref.get(), entity_id=doc_ref.id)
@@ -106,7 +104,7 @@ class FirestoreDatabase(DatabaseInterface):
         """
 
         doc_ref = self.db_client.collection(kind).document()
-        doc_ref.set(create_entity_object(keys, body, 'post'))
+        doc_ref.set(EntityParser().parse(keys, body, 'post', doc_ref.id))
 
         self.process_audit_logging(old_data={}, new_data=doc_ref.get(), entity_id=doc_ref.id)
 
@@ -236,38 +234,13 @@ def data_type_validator(value, type):
         return value
 
 
-def create_entity_object(keys, entity, method):
-    entity_to_return = {}
-    for key in keys:
-        if key == g.db_table_id:
-            entity_to_return[key] = entity['id'] if isinstance(entity, dict) else entity.id
-        else:
-            if isinstance(keys[key], dict) and '_properties' in keys[key]:
-                try:
-                    new_entity = entity.get(key)
-                except KeyError:
-                    new_entity = {}
-
-                entity_to_return[key] = create_entity_object(keys[key]['_properties'], new_entity, method)
-            else:
-                try:
-                    entity_to_return[key] = entity.get(key)
-                except KeyError:
-                    entity_to_return[key] = None
-
-        if keys[key].get('required', False) and method != 'get' and not entity.get(key, None):
-            raise ValueError(f"Property '{key}' is required")
-
-    return entity_to_return
-
-
 def create_response(keys, data):
     if isinstance(data, types.GeneratorType) or isinstance(data, list):
         return_object = {}
         for key in keys:
             if type(keys[key]) == dict:
-                return_object[key] = [create_entity_object(keys[key], entity, 'get') for entity in data]
+                return_object[key] = [EntityParser().parse(keys[key], entity, 'get', entity.id) for entity in data]
 
         return return_object
 
-    return create_entity_object(keys, data, 'get')
+    return EntityParser().parse(keys, data, 'get', data.id)

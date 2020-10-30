@@ -5,7 +5,7 @@ import json
 
 from flask import g, request
 from google.cloud import datastore
-from openapi_server.abstractdatabase import DatabaseInterface
+from openapi_server.abstractdatabase import DatabaseInterface, EntityParser
 
 
 class DatastoreDatabase(DatabaseInterface):
@@ -79,7 +79,7 @@ class DatastoreDatabase(DatabaseInterface):
 
         if entity is not None:
             old_entity = copy.deepcopy(entity)
-            entity.update(create_entity_object(keys, body, 'put'))
+            entity.update(EntityParser().parse(keys, body, 'put', id))
             self.db_client.put(entity)
 
             self.process_audit_logging(old_data=old_entity, new_data=entity)
@@ -103,7 +103,7 @@ class DatastoreDatabase(DatabaseInterface):
         entity_key = self.db_client.key(kind)
         entity = datastore.Entity(key=entity_key)
 
-        entity.update(create_entity_object(keys, body, 'post'))
+        entity.update(EntityParser().parse(keys, body, 'post', entity.key.id_or_name))
         self.db_client.put(entity)
 
         self.process_audit_logging(old_data={}, new_data=entity)
@@ -241,38 +241,14 @@ def data_type_validator(value, type):
         return value
 
 
-def create_entity_object(keys, entity, method):
-    entity_to_return = {}
-    for key in keys:
-        if key == g.db_table_id:
-            entity_to_return[key] = entity.key.id_or_name
-        else:
-            if isinstance(keys[key], dict) and '_properties' in keys[key]:
-                try:
-                    new_entity = entity.get(key)
-                except KeyError:
-                    new_entity = {}
-
-                entity_to_return[key] = create_entity_object(keys[key]['_properties'], new_entity, method)
-            else:
-                try:
-                    entity_to_return[key] = entity.get(key)
-                except KeyError:
-                    entity_to_return[key] = None
-
-        if keys[key].get('required', False) and method != 'get' and not entity.get(key, None):
-            raise ValueError(f"Property '{key}' is required")
-
-    return entity_to_return
-
-
 def create_response(keys, data):
     if type(data) == list:
         return_object = {}
         for key in keys:
             if type(keys[key]) == dict:
-                return_object[key] = [create_entity_object(keys[key], entity, 'get') for entity in data]
+                return_object[key] = [
+                    EntityParser().parse(keys[key], entity, 'get', entity.key.id_or_name) for entity in data]
 
         return return_object
 
-    return create_entity_object(keys, data, 'get')
+    return EntityParser().parse(keys, data, 'get', data.key.id_or_name)

@@ -397,6 +397,49 @@ To let the API now on each request what attribute the ID is, two things have to 
         type: string
     x-db-table-id: pet_id
     ~~~
+    
+##### Field mapping
+It is possible to create a custom field mapping for each schema's property with the optional extension `x-target-field`.
+This can come in handy if a `POST` or `PUT` request has been specified, where all posted fields must be specifically 
+assigned to a nested object within the database. The optional extension is only implemented on `PUT` and `POST` routes.
+
+With the following example, the posted data will be translated to a nested dictionary as shown below.
+
+###### Specification
+~~~yaml
+properties:
+  name:
+    maxLength: 100
+    type: string
+    x-target-field: personal_info.name
+  age:
+    type: integer
+    format: int32
+    x-target-field: personal_info.name
+  breed:
+    maxLength: 100
+    type: string
+~~~
+
+###### Posted Data
+~~~json
+{
+  "name": "Max",
+  "age": 2,
+  "breed": "Bulldog"
+}
+~~~
+
+###### Parsed result
+~~~json
+{
+  "personal_info": {
+    "name": "Max",
+    "age": 2
+  },
+  "breed": "Bulldog"
+}
+~~~
 
 #### Security
 An option to secury the endpoints is also available in the Dynamic Data Manipulation API. For now it can only be used with the 

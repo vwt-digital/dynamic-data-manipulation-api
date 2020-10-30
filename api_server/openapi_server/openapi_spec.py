@@ -74,20 +74,25 @@ def get_schema_properties(spec, schema, request_method):
     required_properties = schema.get('required', [])
 
     for field in schema_properties:
+        if 'x-target-field' in schema_properties[field]:
+            target_field = schema_properties[field]['x-target-field']
+            del schema_properties[field]['x-target-field']
+        else:
+            target_field = field
+
         if schema_properties[field].get('type') in ['array', 'dict'] and '$ref' not in schema_properties[field]:
             for key in schema_properties[field]:
                 if type(schema_properties[field][key]) == dict and '$ref' in schema_properties[field][key]:
                     nested_schema = get_schema(spec, schema_properties[field][key]['$ref'])
                     properties[field] = get_schema_properties(spec, nested_schema, request_method)
                     break
-        elif request_method != 'get' and not schema_properties[field].get('readOnly', False):
-            properties[field] = schema_properties[field]
-        elif request_method == 'get':
+        else:
             if '$ref' in schema_properties[field]:
                 schema_properties[field] = get_schema(spec, schema_properties[field]['$ref'])
 
                 if 'properties' in schema_properties[field]:
                     properties[field] = {
+                        '_target': schema_properties[field].get('x-target-field', field),
                         '_properties': get_schema_properties(spec, schema_properties[field], request_method)
                     }
             else:
@@ -97,6 +102,8 @@ def get_schema_properties(spec, schema, request_method):
             properties[field] = {
                 '_properties': schema_properties[field]['properties']
             }
+
+        properties[field]['_target'] = target_field.split('.')
 
         if field in required_properties:
             properties[field]['required'] = True
