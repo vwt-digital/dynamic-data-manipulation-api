@@ -8,10 +8,19 @@ from flask import request, current_app, g, jsonify, make_response
 from google.cloud import kms
 
 
-def check_database_configuration():
-    if current_app.db_client is None or g.db_table_name is None or \
-            g.db_table_id is None or g.db_keys is None:
-        return make_response(jsonify("Database information insufficient"), 500)
+def check_database_configuration(request_method):
+    existing_config = {
+        'db_client': False if current_app.db_client is None else True,
+        'db_table_name': False if g.db_table_name is None else True,
+        'db_table_id': False if g.db_table_id is None else True,
+        'response_keys': False if (request_method in ['get'] and g.response_keys is None) else True,
+        'db_keys': False if (request_method in ['post', 'put'] and g.db_keys is None) else True
+    }
+
+    for key in existing_config:
+        if not existing_config[key]:
+            logging.debug(existing_config)
+            return make_response(jsonify("Database information insufficient"), 500)
 
 
 def check_identifier(kwargs):
@@ -58,13 +67,13 @@ def generic_get_multiple():  # noqa: E501
     """
 
     # Check for Database configuration
-    db_existence = check_database_configuration()
+    db_existence = check_database_configuration('get')
     if db_existence:
         return db_existence
 
     try:
         db_response = current_app.db_client.get_multiple(
-            kind=g.db_table_name, keys=g.db_keys, filters=g.request_queries)
+            kind=g.db_table_name, db_keys=g.db_keys, res_keys=g.response_keys, filters=g.request_queries)
     except ValueError as e:
         return make_response(jsonify(str(e)), 400)
 
@@ -84,7 +93,7 @@ def generic_get_multiple_page(**kwargs):  # noqa: E501
     """
 
     # Check for Database configuration
-    db_existence = check_database_configuration()
+    db_existence = check_database_configuration('get')
     if db_existence:
         return db_existence
 
@@ -94,7 +103,7 @@ def generic_get_multiple_page(**kwargs):  # noqa: E501
 
     try:
         db_response = current_app.db_client.get_multiple_page(
-            kind=g.db_table_name, keys=g.db_keys, filters=g.request_queries,
+            kind=g.db_table_name, db_keys=g.db_keys, res_keys=g.response_keys, filters=g.request_queries,
             page_cursor=page_cursor, page_size=page_size, page_action=page_action)
     except ValueError as e:
         return make_response(jsonify(str(e)), 400)
@@ -135,7 +144,7 @@ def generic_get_single(**kwargs):  # noqa: E501
     """
 
     # Check for Database configuration
-    db_existence = check_database_configuration()
+    db_existence = check_database_configuration('get')
     if db_existence:
         return db_existence
 
@@ -147,7 +156,7 @@ def generic_get_single(**kwargs):  # noqa: E501
     # Call DB func
     try:
         db_response = current_app.db_client.get_single(
-            id=kwargs.get(g.request_id), kind=g.db_table_name, keys=g.db_keys)
+            id=kwargs.get(g.request_id), kind=g.db_table_name, db_keys=g.db_keys, res_keys=g.response_keys)
     except ValueError as e:
         return make_response(jsonify(str(e)), 400)
 
@@ -167,14 +176,14 @@ def generic_post_single(**kwargs):  # noqa: E501
     """
 
     # Check for Database configuration
-    db_existence = check_database_configuration()
+    db_existence = check_database_configuration('post')
     if db_existence:
         return db_existence
 
     # Call DB func
     try:
         db_response = current_app.db_client.post_single(
-            body=kwargs.get('body', {}), kind=g.db_table_name, keys=g.db_keys)
+            body=kwargs.get('body', {}), kind=g.db_table_name, db_keys=g.db_keys, res_keys=g.response_keys)
     except ValueError as e:
         return make_response(jsonify(str(e)), 400)
 
@@ -194,7 +203,7 @@ def generic_put_single(**kwargs):  # noqa: E501
     """
 
     # Check for Database configuration
-    db_existence = check_database_configuration()
+    db_existence = check_database_configuration('put')
     if db_existence:
         return db_existence
 
@@ -207,7 +216,7 @@ def generic_put_single(**kwargs):  # noqa: E501
     try:
         db_response = current_app.db_client.put_single(
             id=kwargs.get(g.request_id), body=kwargs.get('body', {}), kind=g.db_table_name,
-            keys=g.db_keys)
+            db_keys=g.db_keys, res_keys=g.response_keys)
     except ValueError as e:
         return make_response(jsonify(str(e)), 400)
 

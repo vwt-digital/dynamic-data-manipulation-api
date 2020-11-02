@@ -14,23 +14,23 @@ class DatabaseInterface(ABC):
         pass
 
     @abstractmethod
-    def get_single(self, id, kind, keys):
+    def get_single(self, id, kind, db_keys, res_keys):
         pass
 
     @abstractmethod
-    def put_single(self, id, body, kind, keys):
+    def put_single(self, id, body, kind, db_keys, res_keys):
         pass
 
     @abstractmethod
-    def post_single(self, body, kind, keys):
+    def post_single(self, body, kind, db_keys, res_keys):
         pass
 
     @abstractmethod
-    def get_multiple(self, kind, keys, filters):
+    def get_multiple(self, kind, db_keys, res_keys, filters):
         pass
 
     @abstractmethod
-    def get_multiple_page(self, kind, keys, filters, page_cursor, page_size, page_action):
+    def get_multiple_page(self, kind, db_keys, res_keys, filters, page_cursor, page_size, page_action):
         pass
 
 

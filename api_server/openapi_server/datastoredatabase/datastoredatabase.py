@@ -38,14 +38,16 @@ class DatastoreDatabase(DatabaseInterface):
                 )
                 self.db_client.put(entity)
 
-    def get_single(self, id, kind, keys):
+    def get_single(self, id, kind, db_keys, res_keys):
         """Returns an entity as a dict
 
         :param id: A unique identifier
         :type id: str | int
         :param kind: Database kind of entity
         :type kind: str
-        :param keys: List of entity keys
+        :param db_keys: List of keys for database entity
+        :type kind: list
+        :param res_keys: List of keys for response entity
         :type kind: list
 
         :rtype: dict
@@ -55,11 +57,11 @@ class DatastoreDatabase(DatabaseInterface):
         entity = self.db_client.get(entity_key)
 
         if entity is not None:
-            return create_response(keys, entity)
+            return create_response(res_keys, entity)
 
         return None
 
-    def put_single(self, id, body, kind, keys):
+    def put_single(self, id, body, kind, db_keys, res_keys):
         """Updates an entity
 
         :param id: A unique identifier
@@ -68,7 +70,9 @@ class DatastoreDatabase(DatabaseInterface):
         :type body: dict
         :param kind: Database kind of entity
         :type kind: str
-        :param keys: List of entity keys
+        :param db_keys: List of keys for database entity
+        :type kind: list
+        :param res_keys: List of keys for response entity
         :type kind: list
 
         :rtype: str
@@ -79,22 +83,24 @@ class DatastoreDatabase(DatabaseInterface):
 
         if entity is not None:
             old_entity = copy.deepcopy(entity)
-            entity.update(EntityParser().parse(keys, body, 'put', id))
+            entity.update(EntityParser().parse(db_keys, body, 'put', id))
             self.db_client.put(entity)
 
             self.process_audit_logging(old_data=old_entity, new_data=entity)
-            return id
+            return create_response(res_keys, entity)
 
         return None
 
-    def post_single(self, body, kind, keys):
+    def post_single(self, body, kind, db_keys, res_keys):
         """Creates an entity
 
         :param body:
         :type body: dict
         :param kind: Database kind of entity
         :type kind: str
-        :param keys: List of entity keys
+        :param db_keys: List of keys for database entity
+        :type kind: list
+        :param res_keys: List of keys for response entity
         :type kind: list
 
         :rtype: str
@@ -103,19 +109,21 @@ class DatastoreDatabase(DatabaseInterface):
         entity_key = self.db_client.key(kind)
         entity = datastore.Entity(key=entity_key)
 
-        entity.update(EntityParser().parse(keys, body, 'post', entity.key.id_or_name))
+        entity.update(EntityParser().parse(db_keys, body, 'post', entity.key.id_or_name))
         self.db_client.put(entity)
 
         self.process_audit_logging(old_data={}, new_data=entity)
 
-        return entity.key.id_or_name
+        return create_response(res_keys, entity)
 
-    def get_multiple(self, kind, keys, filters):
+    def get_multiple(self, kind, db_keys, res_keys, filters):
         """Returns all entities as a list of dicts
 
         :param kind: Database kind of entity
         :type kind: str
-        :param keys: List of entity keys
+        :param db_keys: List of keys for database entity
+        :type kind: list
+        :param res_keys: List of keys for response entity
         :type kind: list
         :param filters: List of query filters
         :type kind: list
@@ -127,16 +135,18 @@ class DatastoreDatabase(DatabaseInterface):
         entities = list(query.fetch())
 
         if entities:
-            return create_response(keys, entities)
+            return create_response(res_keys, entities)
 
         return None
 
-    def get_multiple_page(self, kind, keys, filters, page_cursor, page_size, page_action):
+    def get_multiple_page(self, kind, db_keys, res_keys, filters, page_cursor, page_size, page_action):
         """Returns all entities
 
         :param kind: Database kind of entity
         :type kind: str
-        :param keys: List of entity keys
+        :param db_keys: List of keys for database entity
+        :type kind: list
+        :param res_keys: List of keys for response entity
         :type kind: list
         :param filters: List of query filters
         :type kind: list
@@ -150,7 +160,7 @@ class DatastoreDatabase(DatabaseInterface):
         :rtype: dict
         """
 
-        if 'results' not in keys or len(keys['results']) <= 0:
+        if 'results' not in res_keys or len(res_keys['results']) <= 0:
             raise ValueError("Key 'results' is not within response schema")
 
         query_params = {
@@ -174,7 +184,7 @@ class DatastoreDatabase(DatabaseInterface):
         db_data = list(current_page)  # Set page results list
 
         response = {
-            'results': keys['results']
+            'results': res_keys['results']
         }
 
         # Return results

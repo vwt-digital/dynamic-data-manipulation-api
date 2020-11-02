@@ -42,14 +42,16 @@ class FirestoreDatabase(DatabaseInterface):
                 logging.error(f"An exception occurred when audit logging changes for entity '{entity_id}': {str(e)}")
                 pass
 
-    def get_single(self, id, kind, keys):
+    def get_single(self, id, kind, db_keys, res_keys):
         """Returns an entity as a dict
 
         :param id: A unique identifier
         :type id: str | int
         :param kind: Database kind of entity
         :type kind: str
-        :param keys: List of entity keys
+        :param db_keys: List of keys for database entity
+        :type kind: list
+        :param res_keys: List of keys for response entity
         :type kind: list
 
         :rtype: dict
@@ -59,11 +61,11 @@ class FirestoreDatabase(DatabaseInterface):
         doc = doc_ref.get()
 
         if doc.exists:
-            return create_response(keys, doc)
+            return create_response(res_keys, doc)
 
         return None
 
-    def put_single(self, id, body, kind, keys):
+    def put_single(self, id, body, kind, db_keys, res_keys):
         """Updates an entity
 
         :param id: A unique identifier
@@ -72,7 +74,9 @@ class FirestoreDatabase(DatabaseInterface):
         :type body: dict
         :param kind: Database kind of entity
         :type kind: str
-        :param keys: List of entity keys
+        :param db_keys: List of keys for database entity
+        :type kind: list
+        :param res_keys: List of keys for response entity
         :type kind: list
 
         :rtype: str
@@ -82,40 +86,45 @@ class FirestoreDatabase(DatabaseInterface):
         doc = doc_ref.get()
 
         if doc.exists:
-            new_doc = EntityParser().parse(keys, body, 'put', id)
+            new_doc = EntityParser().parse(db_keys, body, 'put', id)
             doc_ref.update(new_doc)
 
             self.process_audit_logging(old_data=doc, new_data=doc_ref.get(), entity_id=doc_ref.id)
-            return doc.id
+
+            return create_response(res_keys, doc)
 
         return None
 
-    def post_single(self, body, kind, keys):
+    def post_single(self, body, kind, db_keys, res_keys):
         """Creates an entity
 
         :param body:
         :type body: dict
         :param kind: Database kind of entity
         :type kind: str
-        :param keys: List of entity keys
+        :param db_keys: List of keys for database entity
+        :type kind: list
+        :param res_keys: List of keys for response entity
         :type kind: list
 
         :rtype: str
         """
 
         doc_ref = self.db_client.collection(kind).document()
-        doc_ref.set(EntityParser().parse(keys, body, 'post', doc_ref.id))
+        doc_ref.set(EntityParser().parse(db_keys, body, 'post', doc_ref.id))
 
         self.process_audit_logging(old_data={}, new_data=doc_ref.get(), entity_id=doc_ref.id)
 
-        return doc_ref.id
+        return create_response(res_keys, doc_ref)
 
-    def get_multiple(self, kind, keys, filters):
+    def get_multiple(self, kind, db_keys, res_keys, filters):
         """Returns all entities as a list of dicts
 
         :param kind: Database kind of entity
         :type kind: str
-        :param keys: List of entity keys
+        :param db_keys: List of keys for database entity
+        :type kind: list
+        :param res_keys: List of keys for response entity
         :type kind: list
         :param filters: List of query filters
         :type kind: list
@@ -127,16 +136,18 @@ class FirestoreDatabase(DatabaseInterface):
         docs = docs_ref.stream()
 
         if docs:
-            return create_response(keys, docs)
+            return create_response(res_keys, docs)
 
         return None
 
-    def get_multiple_page(self, kind, keys, filters, page_cursor, page_size, page_action):
+    def get_multiple_page(self, kind, db_keys, res_keys, filters, page_cursor, page_size, page_action):
         """Returns all entities as a list of dicts
 
         :param kind: Database kind of entity
         :type kind: str
-        :param keys: List of entity keys
+        :param db_keys: List of keys for database entity
+        :type kind: list
+        :param res_keys: List of keys for response entity
         :type kind: list
         :param filters: List of query filters
         :type kind: list
@@ -163,7 +174,7 @@ class FirestoreDatabase(DatabaseInterface):
         docs = [{'id': doc.id, **doc.to_dict()} for doc in docs_ref.stream()]
 
         response = {
-            'results': keys['results']
+            'results': res_keys['results']
         }
 
         # Return results

@@ -29,9 +29,9 @@ def transform_url_rule(url_rule):
     return new_url_rule
 
 
-def get_path_schema_reference(path_object, request_method):
+def get_path_schema_reference(path_object, object_type):
     """Returns the schema-reference from the current path item object"""
-    if request_method in ['get'] and 'responses' in path_object:
+    if object_type == 'responses' and object_type in path_object:
         for code in ['200', '201', '202', '203', '204']:
             if code in path_object['responses']:
                 try:
@@ -41,7 +41,7 @@ def get_path_schema_reference(path_object, request_method):
                     pass
                 else:
                     return route_scheme_ref
-    elif request_method in ['put', 'post', 'patch'] and 'requestBody' in path_object:
+    elif object_type == 'requestBody' and object_type in path_object:
         try:
             route_scheme_ref = get_from_dict(
                 path_object['requestBody'], ['content', 'application/json', 'schema', '$ref'])
@@ -69,6 +69,9 @@ def get_schema(spec, reference):
 
 def get_schema_properties(spec, schema, request_method):
     """Returns all properties as {name: type} from a schema"""
+    if not schema:
+        return None
+
     schema_properties = schema.get('properties', {})
     properties = {}
     required_properties = schema.get('required', [])
@@ -183,6 +186,7 @@ def get_database_info(request):
     db_table_name = None
     db_table_id = None
     db_keys = None
+    response_keys = None
     request_id = None
     request_queries = None
 
@@ -197,9 +201,12 @@ def get_database_info(request):
         request_id = get_request_id(path_item_object)
         request_queries = get_request_query_filters(spec, path_item_object)
 
-        path_schema_reference = get_path_schema_reference(path_item_object, request_method)
-        path_schema = get_schema(spec, path_schema_reference)
-        db_table_id = get_schema_id(spec, path_schema)
-        db_keys = get_schema_properties(spec, path_schema, request_method)
+        db_path_schema = get_schema(spec, get_path_schema_reference(path_item_object, 'requestBody'))
+        db_keys = get_schema_properties(spec, db_path_schema, request_method)
 
-    return db_table_name, db_table_id, db_keys, request_id, request_queries
+        response_path_schema = get_schema(spec, get_path_schema_reference(path_item_object, 'responses'))
+        response_keys = get_schema_properties(spec, response_path_schema, request_method)
+
+        db_table_id = get_schema_id(spec, response_path_schema if request_method == 'get' else db_path_schema)
+
+    return db_table_name, db_table_id, db_keys, response_keys, request_id, request_queries
