@@ -1,3 +1,5 @@
+# flake8: noqa
+
 import yaml
 import re
 import operator
