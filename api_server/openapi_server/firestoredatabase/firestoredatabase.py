@@ -89,9 +89,10 @@ class FirestoreDatabase(DatabaseInterface):
             new_doc = EntityParser().parse(db_keys, body, 'put', id)
             doc_ref.update(new_doc)
 
-            self.process_audit_logging(old_data=doc, new_data=doc_ref.get(), entity_id=doc_ref.id)
+            updated_doc = doc_ref.get()
 
-            return create_response(res_keys, doc)
+            self.process_audit_logging(old_data=doc, new_data=updated_doc, entity_id=doc_ref.id)
+            return create_response(res_keys, updated_doc)
 
         return None
 
@@ -113,9 +114,11 @@ class FirestoreDatabase(DatabaseInterface):
         doc_ref = self.db_client.collection(kind).document()
         doc_ref.set(EntityParser().parse(db_keys, body, 'post', doc_ref.id))
 
-        self.process_audit_logging(old_data={}, new_data=doc_ref.get(), entity_id=doc_ref.id)
+        updated_doc = doc_ref.get()
 
-        return create_response(res_keys, doc_ref)
+        self.process_audit_logging(old_data={}, new_data=updated_doc, entity_id=doc_ref.id)
+
+        return create_response(res_keys, updated_doc)
 
     def get_multiple(self, kind, db_keys, res_keys, filters):
         """Returns all entities as a list of dicts
