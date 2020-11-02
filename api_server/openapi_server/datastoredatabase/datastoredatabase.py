@@ -14,14 +14,14 @@ class DatastoreDatabase(DatabaseInterface):
 
     def process_audit_logging(self, old_data, new_data):
         if hasattr(config, 'AUDIT_LOGS_NAME') and config.AUDIT_LOGS_NAME != "":
-            changed = []
+            changed = {}
             for attribute in list(set(old_data) | set(new_data)):
                 if attribute not in old_data:
-                    changed.append({attribute: {"new": new_data[attribute]}})
+                    changed[attribute] = {"new": new_data[attribute]}
                 elif attribute not in new_data:
-                    changed.append({attribute: {"old": old_data[attribute], "new": None}})
+                    changed[attribute] = {"old": old_data[attribute], "new": None}
                 elif old_data[attribute] != new_data[attribute]:
-                    changed.append({attribute: {"old": old_data[attribute], "new": new_data[attribute]}})
+                    changed[attribute] = {"old": old_data[attribute], "new": new_data[attribute]}
 
             if changed:
                 key = self.db_client.key(config.AUDIT_LOGS_NAME)

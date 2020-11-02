@@ -19,14 +19,14 @@ class FirestoreDatabase(DatabaseInterface):
                 old_data = old_data.to_dict() if type(old_data) != dict else old_data
                 new_data = new_data.to_dict() if type(new_data) != dict else new_data
 
-                changed = []
+                changed = {}
                 for attribute in list(set(old_data) | set(new_data)):
                     if attribute not in old_data:
-                        changed.append({attribute: {"new": new_data[attribute]}})
+                        changed[attribute] = {"new": new_data[attribute]}
                     elif attribute not in new_data:
-                        changed.append({attribute: {"old": old_data[attribute], "new": None}})
+                        changed[attribute] = {"old": old_data[attribute], "new": None}
                     elif old_data[attribute] != new_data[attribute]:
-                        changed.append({attribute: {"old": old_data[attribute], "new": new_data[attribute]}})
+                        changed[attribute] = {"old": old_data[attribute], "new": new_data[attribute]}
 
                 if changed:
                     doc_ref = self.db_client.collection(config.AUDIT_LOGS_NAME).document()
