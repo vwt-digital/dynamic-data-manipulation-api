@@ -1,7 +1,6 @@
 import config
 import copy
 import datetime
-import json
 
 from flask import g, request
 from google.cloud import datastore
@@ -29,7 +28,7 @@ class DatastoreDatabase(DatabaseInterface):
                 entity = datastore.Entity(key=key)
                 entity.update(
                     {
-                        "attributes_changed": json.dumps(changed),
+                        "attributes_changed": changed,
                         "table_id": new_data.key.id_or_name,
                         "table_name": g.db_table_name,
                         "timestamp": datetime.datetime.utcnow().isoformat(timespec="seconds") + 'Z',

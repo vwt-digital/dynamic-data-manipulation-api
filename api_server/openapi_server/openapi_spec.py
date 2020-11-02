@@ -92,6 +92,9 @@ def get_schema_properties(spec, schema, request_method):
                     nested_schema = get_schema(spec, schema_properties[field][key]['$ref'])
                     properties[field] = get_schema_properties(spec, nested_schema, request_method)
                     break
+
+            if field not in properties:
+                properties[field] = schema_properties[field]
         else:
             if '$ref' in schema_properties[field]:
                 nested_schema_properties = get_schema(spec, schema_properties[field]['$ref'])
@@ -103,6 +106,7 @@ def get_schema_properties(spec, schema, request_method):
                     }
             else:
                 properties[field] = schema_properties[field]
+
         if 'properties' in schema_properties[field]:
             properties[field] = {
                 '_properties': schema_properties[field]['properties']

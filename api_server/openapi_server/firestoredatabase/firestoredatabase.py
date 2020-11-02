@@ -1,6 +1,5 @@
 import config
 import logging
-import json
 import types
 
 from datetime import datetime
@@ -32,7 +31,7 @@ class FirestoreDatabase(DatabaseInterface):
                 if changed:
                     doc_ref = self.db_client.collection(config.AUDIT_LOGS_NAME).document()
                     doc_ref.set({
-                        "attributes_changed": json.dumps(changed),
+                        "attributes_changed": changed,
                         "table_id": entity_id,
                         "table_name": g.db_table_name,
                         "timestamp": datetime.utcnow().isoformat(timespec="seconds") + 'Z',
