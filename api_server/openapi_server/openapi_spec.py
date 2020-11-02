@@ -81,9 +81,10 @@ def get_schema_properties(spec, schema, request_method):
     for field in schema_properties:
         if 'x-target-field' in schema_properties[field]:
             target_field = schema_properties[field]['x-target-field']
-            del schema_properties[field]['x-target-field']
-        else:
+        elif '_target' not in schema_properties[field]:
             target_field = field
+        else:
+            target_field = None
 
         if schema_properties[field].get('type') in ['array', 'dict'] and '$ref' not in schema_properties[field]:
             for key in schema_properties[field]:
@@ -93,22 +94,25 @@ def get_schema_properties(spec, schema, request_method):
                     break
         else:
             if '$ref' in schema_properties[field]:
-                schema_properties[field] = get_schema(spec, schema_properties[field]['$ref'])
+                nested_schema_properties = get_schema(spec, schema_properties[field]['$ref'])
 
-                if 'properties' in schema_properties[field]:
+                if 'properties' in nested_schema_properties:
                     properties[field] = {
-                        '_target': schema_properties[field].get('x-target-field', field),
-                        '_properties': get_schema_properties(spec, schema_properties[field], request_method)
+                        '_target': nested_schema_properties.get('x-target-field', field),
+                        '_properties': get_schema_properties(spec, nested_schema_properties, request_method)
                     }
             else:
                 properties[field] = schema_properties[field]
-
         if 'properties' in schema_properties[field]:
             properties[field] = {
                 '_properties': schema_properties[field]['properties']
             }
 
-        properties[field]['_target'] = target_field.split('.')
+        if target_field:
+            properties[field]['_target'] = target_field.split('.')
+
+        if 'x-target-field' in properties[field]:
+            del properties[field]['x-target-field']
 
         if field in required_properties:
             properties[field]['required'] = True
