@@ -30,6 +30,7 @@ jsonschema==3.2.0
 jwkaas==0.7
 MarkupSafe==1.1.1
 openapi-spec-validator==0.2.8
+pandas==1.1.4
 protobuf==3.12.2
 pyasn1==0.4.8
 pyasn1-modules==0.2.8

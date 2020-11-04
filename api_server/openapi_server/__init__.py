@@ -69,6 +69,7 @@ def get_app():
         g.request_queries = None
         g.user = None
         g.token = None
+        g.ip = None
 
         if hasattr(config, 'DATABASE_TYPE'):
             if config.DATABASE_TYPE == 'datastore':
@@ -78,8 +79,14 @@ def get_app():
 
     @app.app.before_request
     def before_request_func():
-        g.db_table_name, g.db_table_id, g.db_keys, g.response_keys, \
-            g.request_id, g.request_queries = openapi_spec.get_database_info(request)
+        try:
+            g.db_table_name, g.db_table_id, g.db_keys, g.response_keys, \
+                g.request_id, g.request_queries = openapi_spec.get_database_info(request)
+        except ValueError as e:
+            g.ip = request.remote_addr
+            g.user = ''
+
+            return str(e), 400
 
     @app.app.after_request
     def add_header(response):

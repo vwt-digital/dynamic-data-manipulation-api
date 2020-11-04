@@ -6,6 +6,7 @@ import operator
 import logging
 
 from functools import reduce
+from flask import request
 
 OPENAPI_PATH = "openapi_server/openapi/openapi.yaml"
 
@@ -36,11 +37,13 @@ def get_path_schema_reference(path_object, object_type):
     if object_type == 'responses' and object_type in path_object:
         for code in ['200', '201', '202', '203', '204']:
             if code in path_object['responses']:
+                content_type = request.content_type if request.content_type else 'application/json'
                 try:
                     route_scheme_ref = get_from_dict(
-                        path_object['responses'][code], ['content', 'application/json', 'schema', '$ref'])
+                        path_object['responses'][code], ['content', content_type, 'schema', '$ref'])
                 except KeyError:
                     pass
+                    raise ValueError(f"The content-type '{content_type}' is not found within the specification")
                 else:
                     return route_scheme_ref
     elif object_type == 'requestBody' and object_type in path_object:
