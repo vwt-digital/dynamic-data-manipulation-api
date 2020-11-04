@@ -7,6 +7,8 @@ from flask import make_response
 
 
 def response_csv(response):
+    """Returns the data as a CSV file"""
+
     timestamp = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
     try:
         output = io.StringIO()
@@ -25,6 +27,8 @@ def response_csv(response):
 
 
 def create_content_response(response, content_type):
+    """Creates a response based on the request's content-type"""
+
     if content_type == 'text/csv':
         return response_csv(response.get('results', response))
 

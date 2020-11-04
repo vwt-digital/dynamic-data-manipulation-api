@@ -58,13 +58,6 @@ def kms_encrypt_decrypt_cursor(cursor, kms_type):
     return response
 
 
-def process_response_type(response):
-    if not request.content_type or request.content_type == 'application/json':
-        return response
-
-    return create_content_response(response, request.content_type)
-
-
 def generic_get_multiple():  # noqa: E501
     """Returns a array of entities
 
@@ -86,7 +79,7 @@ def generic_get_multiple():  # noqa: E501
         return make_response(jsonify(str(e)), 400)
 
     if db_response:
-        return process_response_type(db_response)
+        return create_content_response(db_response, request.content_type)
 
     return make_response(jsonify([]), 204)
 
@@ -137,7 +130,7 @@ def generic_get_multiple_page(**kwargs):  # noqa: E501
         else:
             db_response['prev_page'] = None
 
-        return process_response_type(db_response)
+        return create_content_response(db_response, request.content_type)
 
     return make_response(jsonify([]), 204)
 
@@ -169,7 +162,7 @@ def generic_get_single(**kwargs):  # noqa: E501
         return make_response(jsonify(str(e)), 400)
 
     if db_response:
-        return process_response_type(db_response)
+        return create_content_response(db_response, request.content_type)
 
     return make_response('Not found', 404)
 
