@@ -64,6 +64,7 @@ def get_app():
         g.db_table_name = None
         g.db_table_id = None
         g.db_keys = None
+        g.response_keys = None
         g.request_id = None
         g.request_queries = None
         g.user = None
@@ -77,8 +78,8 @@ def get_app():
 
     @app.app.before_request
     def before_request_func():
-        g.db_table_name, g.db_table_id, g.db_keys, g.request_id, \
-            g.request_queries = openapi_spec.get_database_info(request)
+        g.db_table_name, g.db_table_id, g.db_keys, g.response_keys, \
+            g.request_id, g.request_queries = openapi_spec.get_database_info(request)
 
     @app.app.after_request
     def add_header(response):

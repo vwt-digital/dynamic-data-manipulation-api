@@ -1,11 +1,10 @@
 import config
 import copy
 import datetime
-import json
 
 from flask import g, request
 from google.cloud import datastore
-from openapi_server.abstractdatabase import DatabaseInterface
+from openapi_server.abstractdatabase import DatabaseInterface, EntityParser
 
 
 class DatastoreDatabase(DatabaseInterface):
@@ -15,21 +14,21 @@ class DatastoreDatabase(DatabaseInterface):
 
     def process_audit_logging(self, old_data, new_data):
         if hasattr(config, 'AUDIT_LOGS_NAME') and config.AUDIT_LOGS_NAME != "":
-            changed = []
+            changed = {}
             for attribute in list(set(old_data) | set(new_data)):
                 if attribute not in old_data:
-                    changed.append({attribute: {"new": new_data[attribute]}})
+                    changed[attribute] = {"new": new_data[attribute]}
                 elif attribute not in new_data:
-                    changed.append({attribute: {"old": old_data[attribute], "new": None}})
+                    changed[attribute] = {"old": old_data[attribute], "new": None}
                 elif old_data[attribute] != new_data[attribute]:
-                    changed.append({attribute: {"old": old_data[attribute], "new": new_data[attribute]}})
+                    changed[attribute] = {"old": old_data[attribute], "new": new_data[attribute]}
 
             if changed:
                 key = self.db_client.key(config.AUDIT_LOGS_NAME)
                 entity = datastore.Entity(key=key)
                 entity.update(
                     {
-                        "attributes_changed": json.dumps(changed),
+                        "attributes_changed": changed,
                         "table_id": new_data.key.id_or_name,
                         "table_name": g.db_table_name,
                         "timestamp": datetime.datetime.utcnow().isoformat(timespec="seconds") + 'Z',
@@ -38,14 +37,16 @@ class DatastoreDatabase(DatabaseInterface):
                 )
                 self.db_client.put(entity)
 
-    def get_single(self, id, kind, keys):
+    def get_single(self, id, kind, db_keys, res_keys):
         """Returns an entity as a dict
 
         :param id: A unique identifier
         :type id: str | int
         :param kind: Database kind of entity
         :type kind: str
-        :param keys: List of entity keys
+        :param db_keys: List of keys for database entity
+        :type kind: list
+        :param res_keys: List of keys for response entity
         :type kind: list
 
         :rtype: dict
@@ -55,11 +56,11 @@ class DatastoreDatabase(DatabaseInterface):
         entity = self.db_client.get(entity_key)
 
         if entity is not None:
-            return create_response(keys, entity)
+            return create_response(res_keys, entity)
 
         return None
 
-    def put_single(self, id, body, kind, keys):
+    def put_single(self, id, body, kind, db_keys, res_keys):
         """Updates an entity
 
         :param id: A unique identifier
@@ -68,7 +69,9 @@ class DatastoreDatabase(DatabaseInterface):
         :type body: dict
         :param kind: Database kind of entity
         :type kind: str
-        :param keys: List of entity keys
+        :param db_keys: List of keys for database entity
+        :type kind: list
+        :param res_keys: List of keys for response entity
         :type kind: list
 
         :rtype: str
@@ -79,22 +82,24 @@ class DatastoreDatabase(DatabaseInterface):
 
         if entity is not None:
             old_entity = copy.deepcopy(entity)
-            entity.update(create_entity_object(keys, body, 'put'))
+            entity.update(EntityParser().parse(db_keys, body, 'put', id))
             self.db_client.put(entity)
 
             self.process_audit_logging(old_data=old_entity, new_data=entity)
-            return id
+            return create_response(res_keys, entity)
 
         return None
 
-    def post_single(self, body, kind, keys):
+    def post_single(self, body, kind, db_keys, res_keys):
         """Creates an entity
 
         :param body:
         :type body: dict
         :param kind: Database kind of entity
         :type kind: str
-        :param keys: List of entity keys
+        :param db_keys: List of keys for database entity
+        :type kind: list
+        :param res_keys: List of keys for response entity
         :type kind: list
 
         :rtype: str
@@ -103,19 +108,21 @@ class DatastoreDatabase(DatabaseInterface):
         entity_key = self.db_client.key(kind)
         entity = datastore.Entity(key=entity_key)
 
-        entity.update(create_entity_object(keys, body, 'post'))
+        entity.update(EntityParser().parse(db_keys, body, 'post', entity.key.id_or_name))
         self.db_client.put(entity)
 
         self.process_audit_logging(old_data={}, new_data=entity)
 
-        return entity.key.id_or_name
+        return create_response(res_keys, entity)
 
-    def get_multiple(self, kind, keys, filters):
+    def get_multiple(self, kind, db_keys, res_keys, filters):
         """Returns all entities as a list of dicts
 
         :param kind: Database kind of entity
         :type kind: str
-        :param keys: List of entity keys
+        :param db_keys: List of keys for database entity
+        :type kind: list
+        :param res_keys: List of keys for response entity
         :type kind: list
         :param filters: List of query filters
         :type kind: list
@@ -127,16 +134,18 @@ class DatastoreDatabase(DatabaseInterface):
         entities = list(query.fetch())
 
         if entities:
-            return create_response(keys, entities)
+            return create_response(res_keys, entities)
 
         return None
 
-    def get_multiple_page(self, kind, keys, filters, page_cursor, page_size, page_action):
+    def get_multiple_page(self, kind, db_keys, res_keys, filters, page_cursor, page_size, page_action):
         """Returns all entities
 
         :param kind: Database kind of entity
         :type kind: str
-        :param keys: List of entity keys
+        :param db_keys: List of keys for database entity
+        :type kind: list
+        :param res_keys: List of keys for response entity
         :type kind: list
         :param filters: List of query filters
         :type kind: list
@@ -150,7 +159,7 @@ class DatastoreDatabase(DatabaseInterface):
         :rtype: dict
         """
 
-        if 'results' not in keys or len(keys['results']) <= 0:
+        if 'results' not in res_keys or len(res_keys['results']) <= 0:
             raise ValueError("Key 'results' is not within response schema")
 
         query_params = {
@@ -174,7 +183,7 @@ class DatastoreDatabase(DatabaseInterface):
         db_data = list(current_page)  # Set page results list
 
         response = {
-            'results': keys['results']
+            'results': res_keys['results']
         }
 
         # Return results
@@ -241,33 +250,14 @@ def data_type_validator(value, type):
         return value
 
 
-def create_entity_object(keys, entity, method):
-    entity_to_return = {}
-    for key in keys:
-        if key == g.db_table_id:
-            entity_to_return[key] = entity.key.id_or_name
-        else:
-            try:
-                if method == 'get':
-                    entity_to_return[key] = entity.get(key, None)
-                elif key in entity:
-                    entity_to_return[key] = entity[key]
-            except KeyError:
-                entity_to_return[key] = None
-
-        if keys[key].get('required', False) and method != 'get' and not entity.get(key, None):
-            raise ValueError(f"Property '{key}' is required")
-
-    return entity_to_return
-
-
 def create_response(keys, data):
     if type(data) == list:
         return_object = {}
         for key in keys:
             if type(keys[key]) == dict:
-                return_object[key] = [create_entity_object(keys[key], entity, 'get') for entity in data]
+                return_object[key] = [
+                    EntityParser().parse(keys[key], entity, 'get', entity.key.id_or_name) for entity in data]
 
         return return_object
 
-    return create_entity_object(keys, data, 'get')
+    return EntityParser().parse(keys, data, 'get', data.key.id_or_name)

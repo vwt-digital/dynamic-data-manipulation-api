@@ -1,3 +1,5 @@
+# flake8: noqa
+
 import yaml
 import re
 import operator
@@ -29,9 +31,9 @@ def transform_url_rule(url_rule):
     return new_url_rule
 
 
-def get_path_schema_reference(path_object, request_method):
+def get_path_schema_reference(path_object, object_type):
     """Returns the schema-reference from the current path item object"""
-    if request_method in ['get'] and 'responses' in path_object:
+    if object_type == 'responses' and object_type in path_object:
         for code in ['200', '201', '202', '203', '204']:
             if code in path_object['responses']:
                 try:
@@ -41,7 +43,7 @@ def get_path_schema_reference(path_object, request_method):
                     pass
                 else:
                     return route_scheme_ref
-    elif request_method in ['put', 'post', 'patch'] and 'requestBody' in path_object:
+    elif object_type == 'requestBody' and object_type in path_object:
         try:
             route_scheme_ref = get_from_dict(
                 path_object['requestBody'], ['content', 'application/json', 'schema', '$ref'])
@@ -69,26 +71,52 @@ def get_schema(spec, reference):
 
 def get_schema_properties(spec, schema, request_method):
     """Returns all properties as {name: type} from a schema"""
+    if not schema:
+        return None
+
     schema_properties = schema.get('properties', {})
     properties = {}
     required_properties = schema.get('required', [])
 
     for field in schema_properties:
-        if schema_properties[field].get('type') in ['array', 'dict']:
+        if 'x-target-field' in schema_properties[field]:
+            target_field = schema_properties[field]['x-target-field']
+        elif '_target' not in schema_properties[field]:
+            target_field = field
+        else:
+            target_field = None
+
+        if schema_properties[field].get('type') in ['array', 'dict'] and '$ref' not in schema_properties[field]:
             for key in schema_properties[field]:
                 if type(schema_properties[field][key]) == dict and '$ref' in schema_properties[field][key]:
                     nested_schema = get_schema(spec, schema_properties[field][key]['$ref'])
                     properties[field] = get_schema_properties(spec, nested_schema, request_method)
                     break
-        elif request_method != 'get' and not schema_properties[field].get('readOnly', False):
-            properties[field] = schema_properties[field]
-        elif request_method == 'get':
+
+            if field not in properties:
+                properties[field] = schema_properties[field]
+        else:
             if '$ref' in schema_properties[field]:
-                nested_schema = get_schema(spec, schema_properties[field]['$ref'])
-                properties[field] = get_schema_properties(spec, nested_schema, request_method) if \
-                    'properties' in nested_schema else nested_schema
+                nested_schema_properties = get_schema(spec, schema_properties[field]['$ref'])
+
+                if 'properties' in nested_schema_properties:
+                    properties[field] = {
+                        '_target': nested_schema_properties.get('x-target-field', field),
+                        '_properties': get_schema_properties(spec, nested_schema_properties, request_method)
+                    }
             else:
                 properties[field] = schema_properties[field]
+
+        if 'properties' in schema_properties[field]:
+            properties[field] = {
+                '_properties': schema_properties[field]['properties']
+            }
+
+        if target_field:
+            properties[field]['_target'] = target_field.split('.')
+
+        if 'x-target-field' in properties[field]:
+            del properties[field]['x-target-field']
 
         if field in required_properties:
             properties[field]['required'] = True
@@ -118,7 +146,7 @@ def get_request_id(path_item_object):
     """Returns the first request parameter name"""
     if 'parameters' in path_item_object and 'name' in path_item_object['parameters'][0] and \
             path_item_object['parameters'][0]['name'] not in ['page_cursor', 'page_size', 'page_action'] and \
-            path_item_object['parameters'][0]['name']['in'] == 'path':
+            path_item_object['parameters'][0]['in'] == 'path':
         return path_item_object['parameters'][0]['name']
 
     return None
@@ -134,7 +162,7 @@ def get_request_query_filters(spec, path_item_object):
     for filter in path_item_object.get('parameters', []):
         filter = get_schema(spec, filter['$ref']) if '$ref' in filter else filter
 
-        if filter['name'] not in ['page_cursor', 'page_size', 'page_action']:
+        if filter['in'] == 'query' and filter['name'] not in ['page_cursor', 'page_size', 'page_action']:
             for key in ['schema', 'x-query-filter-comparison', 'x-query-filter-field']:
                 if key not in filter:
                     logging.info(f"Error: query param '{filter['name']}' is missing the required '{key}'")
@@ -168,6 +196,7 @@ def get_database_info(request):
     db_table_name = None
     db_table_id = None
     db_keys = None
+    response_keys = None
     request_id = None
     request_queries = None
 
@@ -182,9 +211,12 @@ def get_database_info(request):
         request_id = get_request_id(path_item_object)
         request_queries = get_request_query_filters(spec, path_item_object)
 
-        path_schema_reference = get_path_schema_reference(path_item_object, request_method)
-        path_schema = get_schema(spec, path_schema_reference)
-        db_table_id = get_schema_id(spec, path_schema)
-        db_keys = get_schema_properties(spec, path_schema, request_method)
+        db_path_schema = get_schema(spec, get_path_schema_reference(path_item_object, 'requestBody'))
+        db_keys = get_schema_properties(spec, db_path_schema, request_method)
 
-    return db_table_name, db_table_id, db_keys, request_id, request_queries
+        response_path_schema = get_schema(spec, get_path_schema_reference(path_item_object, 'responses'))
+        response_keys = get_schema_properties(spec, response_path_schema, request_method)
+
+        db_table_id = get_schema_id(spec, response_path_schema if request_method == 'get' else db_path_schema)
+
+    return db_table_name, db_table_id, db_keys, response_keys, request_id, request_queries
