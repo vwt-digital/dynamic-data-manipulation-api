@@ -13,10 +13,7 @@ def response_csv(response):
     try:
         output = io.StringIO()
 
-        df = pd.DataFrame(response)
-        for col in df.select_dtypes(include=['datetimetz']):
-            df[col] = df[col].apply(lambda a: a.tz_convert('Europe/Amsterdam').tz_localize(None))
-
+        df = create_dataframe(response)
         csv_response = df.to_csv(sep=";", index=False, decimal=",")
 
         output.write(csv_response)
@@ -37,11 +34,9 @@ def response_xlsx(response):
         output = io.BytesIO()
         writer = pd.ExcelWriter(output, engine='xlsxwriter')
 
-        df = pd.DataFrame(response)
-        for col in df.select_dtypes(include=['datetimetz']):
-            df[col] = df[col].apply(lambda a: a.tz_convert('Europe/Amsterdam').tz_localize(None))
-
+        df = create_dataframe(response)
         df.to_excel(writer, sheet_name=g.db_table_name, index=False)
+
         writer.save()
 
         response = make_response(output.getvalue())
@@ -50,6 +45,14 @@ def response_xlsx(response):
     except Exception as e:
         logging.info(f"Generating XLSX file failed: {str(e)}")
         return make_response('Something went wrong during the generation of a XLSX file', 400)
+
+
+def create_dataframe(response):
+    df = pd.DataFrame(response)
+    for col in df.select_dtypes(include=['datetimetz']):
+        df[col] = df[col].apply(lambda a: a.tz_convert('Europe/Amsterdam').tz_localize(None))
+
+    return df
 
 
 def create_content_response(response, content_type):
