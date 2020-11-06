@@ -54,9 +54,9 @@ def get_app():
                 arguments={'title': 'Dynamic Data Manipulator API'},
                 strict_validation=True)
     if 'GAE_INSTANCE' in os.environ or 'K_SERVICE' in os.environ:
-        CORS(app.app, origins=config.ORIGINS)
+        CORS(app.app, origins=config.ORIGINS, expose_headers=['Content-Disposition'])
     else:
-        CORS(app.app)
+        CORS(app.app, expose_headers=['Content-Disposition'])
 
     with app.app.app_context():
         current_app.__pii_filter_def__ = None
