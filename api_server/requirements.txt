@@ -2,8 +2,6 @@ appdirs==1.4.3
 attrs==19.3.0
 CacheControl==0.12.6
 cachetools==4.1.0
-cairocffi==1.2.0
-CairoSVG==2.5.0
 certifi==2020.4.5.2
 cffi==1.14.0
 chardet==3.0.4
@@ -13,8 +11,6 @@ colorama==0.4.3
 connexion==2.7.0
 contextlib2==0.6.0
 cryptography==3.2
-cssselect2==0.4.1
-defusedxml==0.6.0
 distlib==0.3.0
 distro==1.4.0
 et-xmlfile==1.0.1
@@ -24,7 +20,6 @@ Flask-Cors==3.0.8
 Flask-No-Cache==1.0
 Flask-SSLify==0.1.5
 Flask-Testing==0.7.1
-Flask-WeasyPrint==0.6
 google-api-core==1.20.0
 google-auth==1.17.1
 google-cloud-core==1.3.0
@@ -53,7 +48,6 @@ openpyxl==3.0.5
 packaging==20.3
 pandas==1.1.4
 pep517==0.8.2
-Pillow==8.0.1
 progress==1.5
 protobuf==3.12.2
 pyasn1==0.4.8
@@ -61,7 +55,6 @@ pyasn1-modules==0.2.8
 pycparser==2.20
 PyJWT==1.7.1
 pyparsing==2.4.6
-Pyphen==0.10.0
 pyrsistent==0.16.0
 python-dateutil==2.8.1
 pytoml==0.1.21
@@ -72,9 +65,7 @@ retrying==1.3.3
 rsa==4.2
 six==1.15.0
 swagger-ui-bundle==0.0.6
-tinycss2==1.1.0
 urllib3==1.25.9
-WeasyPrint==52.1
 webencodings==0.5.1
 Werkzeug==1.0.1
 XlsxWriter==1.3.7

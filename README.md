@@ -375,7 +375,6 @@ Format | Media type
 JSON | `application/json`
 CSV | `text/csv`
 Excel (XLSX) | `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`
-PDF | `application/pdf`
 
 If a request does not specify a media type through the header `Content-Type`, the API will fall back on 
 `application/json` as media type.
