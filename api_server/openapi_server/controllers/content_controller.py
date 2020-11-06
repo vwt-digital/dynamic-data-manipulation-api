@@ -19,7 +19,8 @@ def response_csv(response):
         output.write(csv_response)
 
         response = make_response(output.getvalue())
-        response.headers['Content-Disposition'] = f"attachment; filename={timestamp}.csv"
+        response.headers['Content-Type'] = 'text/csv'
+        response.headers['Content-Disposition'] = f"attachment; filename={g.db_table_name}_{timestamp}.csv"
         return response
     except Exception as e:
         logging.info(f"Generating CSV file failed: {str(e)}")
@@ -40,6 +41,7 @@ def response_xlsx(response):
         writer.save()
 
         response = make_response(output.getvalue())
+        response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         response.headers['Content-Disposition'] = f"attachment; filename={g.db_table_name}_{timestamp}.xlsx"
         return response
     except Exception as e:
