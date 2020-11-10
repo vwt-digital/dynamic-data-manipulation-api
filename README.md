@@ -411,7 +411,8 @@ To let the API now on each request what attribute the ID is, two things have to 
 ##### Field mapping
 It is possible to create a custom field mapping for each schema's property with the optional extension `x-target-field`.
 This can come in handy if a `POST` or `PUT` request has been specified, where all posted fields must be specifically 
-assigned to a nested object within the database. The optional extension is only implemented on `PUT` and `POST` routes.
+assigned to a nested object within the database. If not specified, the API will retrieve the value based on the schema 
+location.
 
 With the following example, the posted data will be translated to a nested dictionary as shown below.
 

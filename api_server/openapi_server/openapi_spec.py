@@ -72,7 +72,7 @@ def get_schema(spec, reference):
     return None
 
 
-def get_schema_properties(spec, schema, request_method):
+def get_schema_properties(spec, schema, request_method, parent_key=None):
     """Returns all properties as {name: type} from a schema"""
     if not schema:
         return None
@@ -82,10 +82,15 @@ def get_schema_properties(spec, schema, request_method):
     required_properties = schema.get('required', [])
 
     for field in schema_properties:
+        cur_parent_key = [key for key in parent_key] if parent_key else []
+
+        if field != 'results':
+            cur_parent_key.append(field)
+
         if 'x-target-field' in schema_properties[field]:
             target_field = schema_properties[field]['x-target-field']
         elif '_target' not in schema_properties[field]:
-            target_field = field
+            target_field = cur_parent_key
         else:
             target_field = None
 
@@ -93,7 +98,7 @@ def get_schema_properties(spec, schema, request_method):
             for key in schema_properties[field]:
                 if type(schema_properties[field][key]) == dict and '$ref' in schema_properties[field][key]:
                     nested_schema = get_schema(spec, schema_properties[field][key]['$ref'])
-                    properties[field] = get_schema_properties(spec, nested_schema, request_method)
+                    properties[field] = get_schema_properties(spec, nested_schema, request_method, cur_parent_key)
                     break
 
             if field not in properties:
@@ -105,7 +110,8 @@ def get_schema_properties(spec, schema, request_method):
                 if 'properties' in nested_schema_properties:
                     properties[field] = {
                         '_target': nested_schema_properties.get('x-target-field', field),
-                        '_properties': get_schema_properties(spec, nested_schema_properties, request_method)
+                        '_properties': get_schema_properties(
+                            spec, nested_schema_properties, request_method, cur_parent_key)
                     }
             else:
                 properties[field] = schema_properties[field]
@@ -116,7 +122,7 @@ def get_schema_properties(spec, schema, request_method):
             }
 
         if target_field:
-            properties[field]['_target'] = target_field.split('.')
+            properties[field]['_target'] = target_field if isinstance(target_field, list) else target_field.split('.')
 
         if 'x-target-field' in properties[field]:
             del properties[field]['x-target-field']

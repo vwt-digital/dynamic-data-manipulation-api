@@ -40,6 +40,9 @@ class EntityParser:
         pass
 
     def parse(self, keys, entity, method, entity_id):
+        if not isinstance(entity, dict):
+            entity = entity.to_dict()
+
         if method == 'get':
             return self.create_object(keys, entity, entity_id, False)
         else:
@@ -57,17 +60,12 @@ class EntityParser:
                 continue
 
             if isinstance(keys[key], dict) and '_properties' in keys[key]:
-                try:
-                    new_entity = entity.get(key)
-                except (KeyError, AttributeError):
-                    new_entity = {}
-
-                nested_object = self.create_object(keys[key]['_properties'], new_entity, entity_id, value_bound)
+                nested_object = self.create_object(keys[key]['_properties'], entity, entity_id, value_bound)
                 if nested_object:
                     entity_to_return[key] = nested_object
             else:
                 try:
-                    entity_to_return[key] = entity.get(key)
+                    entity_to_return[key] = get_from_dict(entity, keys[key].get('_target', key))
                 except (KeyError, AttributeError):
                     if value_bound and not keys[key].get('required', False):
                         continue
