@@ -367,7 +367,17 @@ paths:
           description: Returns a pet
 ~~~
 
-_Currently, the only [media type](https://swagger.io/docs/specification/describing-responses/#media-types) supported is `application/json`._
+##### Media types
+The API supports the following [media type](https://swagger.io/docs/specification/media-types/) for responses:
+
+Format | Media type
+--- | ---
+JSON | `application/json`
+CSV | `text/csv`
+Excel (XLSX) | `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`
+
+If a request does not specify a media type through the header `Content-Type`, the API will fall back on 
+`application/json` as media type.
 
 ##### Schema identifier
 The API will create response and body objects based on the schema's defined within a path method fully automatic. A big part of

@@ -4,6 +4,7 @@ import re
 import base64
 import logging
 
+from openapi_server.controllers.content_controller import create_content_response
 from flask import request, current_app, g, jsonify, make_response
 from google.cloud import kms
 
@@ -78,7 +79,7 @@ def generic_get_multiple():  # noqa: E501
         return make_response(jsonify(str(e)), 400)
 
     if db_response:
-        return db_response
+        return create_content_response(db_response, request.content_type)
 
     return make_response(jsonify([]), 204)
 
@@ -129,7 +130,7 @@ def generic_get_multiple_page(**kwargs):  # noqa: E501
         else:
             db_response['prev_page'] = None
 
-        return db_response
+        return create_content_response(db_response, request.content_type)
 
     return make_response(jsonify([]), 204)
 
@@ -161,7 +162,7 @@ def generic_get_single(**kwargs):  # noqa: E501
         return make_response(jsonify(str(e)), 400)
 
     if db_response:
-        return db_response
+        return create_content_response(db_response, request.content_type)
 
     return make_response('Not found', 404)
 
