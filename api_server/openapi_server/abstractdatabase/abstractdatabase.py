@@ -65,7 +65,10 @@ class EntityParser:
                     entity_to_return[key] = nested_object
             else:
                 try:
-                    entity_to_return[key] = get_from_dict(entity, keys[key].get('_target', key))
+                    if value_bound:
+                        entity_to_return[key] = entity.get(key)
+                    else:
+                        entity_to_return[key] = get_from_dict(entity, keys[key].get('_target', key))
                 except (KeyError, AttributeError):
                     if value_bound and not keys[key].get('required', False):
                         continue
