@@ -90,7 +90,8 @@ Because OpenAPI requires the specification to have unique `operationId`'s, this 
 To add two paths with both the posibility to post a single entity, the definitions `generic_post_single` and `generic_post_single2` can be used.
 Both these operations execute the same function but have unique identifiers.
 
-_For each definition are three implementations (e.g. `generic_post_single`, `generic_post_single2` and `generic_post_single3`)_
+_For each definition are four implementations (e.g. `generic_post_single`, `generic_post_single2`, 
+`generic_post_single3` and `generic_post_single4`)_
 
 #### Path parameter
 To create an endpoint for single entities, a path parameter has to be defined. This path parameter will be used to retrieve or update

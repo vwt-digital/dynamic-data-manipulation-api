@@ -245,11 +245,19 @@ def generic_get_multiple3():  # noqa: E501
     return generic_get_multiple()
 
 
+def generic_get_multiple4():  # noqa: E501
+    return generic_get_multiple()
+
+
 def generic_get_multiple_page2(**kwargs):  # noqa: E501
     return generic_get_multiple_page(**kwargs)
 
 
 def generic_get_multiple_page3(**kwargs):  # noqa: E501
+    return generic_get_multiple_page(**kwargs)
+
+
+def generic_get_multiple_page4(**kwargs):  # noqa: E501
     return generic_get_multiple_page(**kwargs)
 
 
@@ -261,6 +269,10 @@ def generic_get_single3(**kwargs):  # noqa: E501
     return generic_get_single(**kwargs)
 
 
+def generic_get_single4(**kwargs):  # noqa: E501
+    return generic_get_single(**kwargs)
+
+
 def generic_post_single2(**kwargs):  # noqa: E501
     return generic_post_single(**kwargs)
 
@@ -269,9 +281,17 @@ def generic_post_single3(**kwargs):  # noqa: E501
     return generic_post_single(**kwargs)
 
 
+def generic_post_single4(**kwargs):  # noqa: E501
+    return generic_post_single(**kwargs)
+
+
 def generic_put_single2(**kwargs):  # noqa: E501
     return generic_put_single(**kwargs)
 
 
 def generic_put_single3(**kwargs):  # noqa: E501
+    return generic_put_single(**kwargs)
+
+
+def generic_put_single4(**kwargs):  # noqa: E501
     return generic_put_single(**kwargs)
