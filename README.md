@@ -29,6 +29,29 @@ The available variables are:
 - `DATABASE_TYPE`: `[required]` `[string]` The identifier for the database to be used (see [Database Type](#database-type))
 - `AUDIT_LOGS_NAME`: `[string]` The identifier for the Database table where the audit logs will be inserted (see [Audit logging](#audit-logging))
 - `KMS_KEY_INFO`: `[object]` KMS information for encrypting and decrypting sensitive information (see [Cursor encryption](#cursor-encryption))
+- `ROUTE_FORCED_FILTERS`: `[dict]` A list of forced filters (see [Forced Filters](#forced-filters))
+
+##### Forced Filters
+To ensure users only retrieve or update information they are allowed to access, forced filters can be
+implemented. This restriction can be added to the configuration file, as written above.
+
+To create forced filters, the configuration attribute `ROUTE_FORCED_FILTERS` can be added. This is a dictionary of the
+specific routes the filters are forced to, where each route can have multiple filters. Each filter entity must contain 
+the following fields:
+- `value`: `[string]` The value of the forced filter. Dynamic values:
+    - `_UPN`: The UPN from the authorization token 
+    - `_IP` The IP address from the current request
+- `field`: `[string]` The field where the filter must be applied to. (Use `.` to access nested fields)
+
+~~~python
+ROUTE_FORCED_FILTERS = {
+    '/pets': [
+        {'value': '_UPN', 'field': 'owner_email'}
+    ]
+}
+~~~
+
+> A good use-case for this is to only receive entities based on a certain UPN, as seen in the example above
 
 #### Database Type
 One of the configuration variables to be specified is the `DATABASE_TYPE`. This will specify the database the API will use to add, retrieve and edit

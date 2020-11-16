@@ -36,6 +36,7 @@ def get_app():
         g.response_keys = None
         g.request_id = None
         g.request_queries = None
+        g.forced_filters = None
         g.user = None
         g.token = None
         g.ip = None
@@ -50,7 +51,7 @@ def get_app():
     def before_request_func():
         try:
             g.db_table_name, g.db_table_id, g.db_keys, g.response_keys, \
-                g.request_id, g.request_queries = openapi_spec.get_database_info(request)
+                g.request_id, g.request_queries, g.forced_filters = openapi_spec.get_database_info(request)
         except ValueError as e:
             g.ip = request.remote_addr
             g.user = ''

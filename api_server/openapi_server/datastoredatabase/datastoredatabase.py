@@ -4,7 +4,7 @@ import datetime
 
 from flask import g, request
 from google.cloud import datastore
-from openapi_server.abstractdatabase import DatabaseInterface, EntityParser
+from openapi_server.abstractdatabase import DatabaseInterface, EntityParser, ForcedFilters
 
 
 class DatastoreDatabase(DatabaseInterface):
@@ -56,6 +56,8 @@ class DatastoreDatabase(DatabaseInterface):
         entity = self.db_client.get(entity_key)
 
         if entity is not None:
+            ForcedFilters().validate(filters=g.forced_filters, entity=entity)
+
             return create_response(res_keys, entity)
 
         return None
@@ -81,6 +83,8 @@ class DatastoreDatabase(DatabaseInterface):
         entity = self.db_client.get(entity_key)
 
         if entity is not None:
+            ForcedFilters().validate(filters=g.forced_filters, entity=entity)
+
             old_entity = copy.deepcopy(entity)
             entity.update(EntityParser().parse(db_keys, body, 'put', id))
             self.db_client.put(entity)
@@ -216,7 +220,16 @@ class DatastoreDatabase(DatabaseInterface):
             args = request.args.to_dict()
 
             for filter in filters:
-                if filter['name'] in args:
+                if filter['name'] == '_FORCED_FILTER':
+                    if filter['value'] == "_UPN":
+                        filter_value = g.user
+                    elif filter['value'] == "_IP":
+                        filter_value = g.ip
+                    else:
+                        filter_value = filter['value']
+
+                    query = query.add_filter(filter['field'], filter['comparison'], filter_value)
+                elif filter['name'] in args:
                     filter_datatype = filter['schema']['format'] if \
                         filter['schema'].get('format') else filter['schema']['type']
                     filter_value = data_type_validator(args[filter['name']], filter_datatype)

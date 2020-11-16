@@ -1,9 +1,11 @@
 # flake8: noqa
 
+import config
 import yaml
 import re
 import operator
 import logging
+import json
 
 from functools import reduce
 from flask import request
@@ -161,9 +163,32 @@ def get_request_id(path_item_object):
     return None
 
 
-def get_request_query_filters(spec, path_item_object):
-    """Returns all query filters from the request"""
+def get_forced_query_filters(forced_filters):
     query_filters = []
+
+    if forced_filters:
+        for filter in forced_filters:
+            for key in ['value', 'field']:
+                if key not in filter:
+                    logging.error(f"Error: Forced filter is missing the required key '{key}'. {json.dumps(filter)}")
+                    raise ValueError("Database information insufficient")
+
+            query_filters.append({
+                'comparison': "==",
+                'field': filter['field'],
+                'name': "_FORCED_FILTER",
+                'value': filter['value'],
+                'schema': {'format': filter.get('format', 'string')},
+                'required': True
+            })
+
+    return query_filters
+
+
+def get_request_query_filters(spec, path_item_object, forced_filters):
+    """Returns all query filters from the request"""
+    query_filters = get_forced_query_filters(forced_filters)
+
     comparisons = {
         'equal_to': '==', 'not_equal_to': '!=', 'less_than': '<', 'less_than_or_equal_to': '<=', 'greater_than': '>',
         'greater_than_or_equal_to': '>='}
@@ -202,23 +227,27 @@ def get_request_query_filters(spec, path_item_object):
 
 def get_database_info(request):
     """Returns the all database info"""
+    request_rule = transform_url_rule(request.url_rule)
+
     db_table_name = None
     db_table_id = None
     db_keys = None
     response_keys = None
     request_id = None
     request_queries = None
+    forced_filters = config.ROUTE_FORCED_FILTERS.get(request_rule, []) if \
+        hasattr(config, 'ROUTE_FORCED_FILTERS') else []
 
     spec = get_specification()
     request_method = str(request.method).lower()
-    path_object = spec.get('paths', {}).get(transform_url_rule(request.url_rule), None)
+    path_object = spec.get('paths', {}).get(request_rule, None)
 
     if path_object and request_method in path_object:
         path_item_object = path_object[request_method]
         db_table_name = path_object.get('x-db-table-name', None)
 
         request_id = get_request_id(path_item_object)
-        request_queries = get_request_query_filters(spec, path_item_object)
+        request_queries = get_request_query_filters(spec, path_item_object, forced_filters)
 
         db_path_schema = get_schema(spec, get_path_schema_reference(path_item_object, 'requestBody'))
         db_keys = get_schema_properties(spec, db_path_schema, request_method)
@@ -228,4 +257,4 @@ def get_database_info(request):
 
         db_table_id = get_schema_id(spec, response_path_schema if request_method == 'get' else db_path_schema)
 
-    return db_table_name, db_table_id, db_keys, response_keys, request_id, request_queries
+    return db_table_name, db_table_id, db_keys, response_keys, request_id, request_queries, forced_filters

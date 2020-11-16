@@ -117,6 +117,54 @@ class EntityParser:
         return dict(items)
 
 
+class ForcedFilters:
+
+    def __init__(self):
+        pass
+
+    def validate(self, filters, entity):
+        """Validates if the entity can be accessed based on the forced filters
+
+        :param filters: A list of forced filters
+        :type filters: list
+        :param entity: The entity
+        :type entity: dict | None
+        """
+
+        for item in filters:
+            value = self.get_restriction_values(item['value'])
+
+            if entity and value:
+                self.process_entity_validation(entity, item['field'], value)
+            else:
+                raise ValueError("Request has insufficient route filters")
+
+    @staticmethod
+    def process_entity_validation(entity, field, value):
+        if entity:
+            try:
+                compare_from_dict(entity, field.split('.'), value)
+            except (KeyError, AttributeError):
+                raise PermissionError("Unauthorized request")
+
+        return None
+
+    @staticmethod
+    def get_restriction_values(value):
+        if value == '_UPN' and g.user:
+            return g.user
+        elif value == '_IP' and g.ip:
+            return g.ip
+
+        return value
+
+
 def get_from_dict(data_dict, map_list):
     """Returns a dictionary based on a mapping"""
     return reduce(operator.getitem, map_list, data_dict)
+
+
+def compare_from_dict(data_dict, map_list, value):
+    """Returns an error if value not same as mapping value"""
+    if not value == get_from_dict(data_dict, map_list):
+        raise AttributeError
