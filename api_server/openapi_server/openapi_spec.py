@@ -166,21 +166,20 @@ def get_request_id(path_item_object):
 def get_forced_query_filters(forced_filters):
     query_filters = []
 
-    if forced_filters:
-        for filter in forced_filters:
-            for key in ['value', 'field']:
-                if key not in filter:
-                    logging.error(f"Error: Forced filter is missing the required key '{key}'. {json.dumps(filter)}")
-                    raise ValueError("Database information insufficient")
+    for filter in forced_filters:
+        for key in ['value', 'field']:
+            if key not in filter:
+                logging.error(f"Error: Forced filter is missing the required key '{key}'. {json.dumps(filter)}")
+                raise ValueError("Database information insufficient")
 
-            query_filters.append({
-                'comparison': "==",
-                'field': filter['field'],
-                'name': "_FORCED_FILTER",
-                'value': filter['value'],
-                'schema': {'format': filter.get('format', 'string')},
-                'required': True
-            })
+        query_filters.append({
+            'comparison': "==",
+            'field': filter['field'],
+            'name': "_FORCED_FILTER",
+            'value': filter['value'],
+            'schema': {'format': filter.get('format', 'string')},
+            'required': True
+        })
 
     return query_filters
 
@@ -235,8 +234,7 @@ def get_database_info(request):
     response_keys = None
     request_id = None
     request_queries = None
-    forced_filters = config.ROUTE_FORCED_FILTERS.get(request_rule, []) if \
-        hasattr(config, 'ROUTE_FORCED_FILTERS') else []
+    forced_filters = []
 
     spec = get_specification()
     request_method = str(request.method).lower()
@@ -245,6 +243,7 @@ def get_database_info(request):
     if path_object and request_method in path_object:
         path_item_object = path_object[request_method]
         db_table_name = path_object.get('x-db-table-name', None)
+        forced_filters = path_item_object.get('x-forced-filters', [])
 
         request_id = get_request_id(path_item_object)
         request_queries = get_request_query_filters(spec, path_item_object, forced_filters)

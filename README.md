@@ -29,29 +29,6 @@ The available variables are:
 - `DATABASE_TYPE`: `[required]` `[string]` The identifier for the database to be used (see [Database Type](#database-type))
 - `AUDIT_LOGS_NAME`: `[string]` The identifier for the Database table where the audit logs will be inserted (see [Audit logging](#audit-logging))
 - `KMS_KEY_INFO`: `[object]` KMS information for encrypting and decrypting sensitive information (see [Cursor encryption](#cursor-encryption))
-- `ROUTE_FORCED_FILTERS`: `[dict]` A list of forced filters (see [Forced Filters](#forced-filters))
-
-##### Forced Filters
-To ensure users only retrieve or update information they are allowed to access, forced filters can be
-implemented. This restriction can be added to the configuration file, as written above.
-
-To create forced filters, the configuration attribute `ROUTE_FORCED_FILTERS` can be added. This is a dictionary of the
-specific routes the filters are forced to, where each route can have multiple filters. Each filter entity must contain 
-the following fields:
-- `value`: `[string]` The value of the forced filter. Dynamic values:
-    - `_UPN`: The UPN from the authorization token 
-    - `_IP` The IP address from the current request
-- `field`: `[string]` The field where the filter must be applied to. (Use `.` to access nested fields)
-
-~~~python
-ROUTE_FORCED_FILTERS = {
-    '/pets': [
-        {'value': '_UPN', 'field': 'owner_email'}
-    ]
-}
-~~~
-
-> A good use-case for this is to only receive entities based on a certain UPN, as seen in the example above
 
 #### Database Type
 One of the configuration variables to be specified is the `DATABASE_TYPE`. This will specify the database the API will use to add, retrieve and edit
@@ -319,17 +296,48 @@ To connect the endpoints to specific database tables, the custom [extension](htt
 individual paths, as shown below, and is required for each path.
 ~~~yaml
 paths:
-    /pets:
-      get:
-          description: Get a list of all pets
-          operationId: generic_get_multiple
-          x-openapi-router-controller: openapi_server.controllers.default_controller
-      post:
-        description: Create a new pet
-        operationId: generic_post_single
-        x-openapi-router-controller: openapi_server.controllers.default_controller
-      x-db-table-name: Pets
+  /pets:
+    get:
+      description: Get a list of all pets
+      operationId: generic_get_multiple
+      x-openapi-router-controller: openapi_server.controllers.default_controller
+    post:
+      description: Create a new pet
+      operationId: generic_post_single
+      x-openapi-router-controller: openapi_server.controllers.default_controller
+    x-db-table-name: Pets
 ~~~ 
+
+#### Forced Filters
+To ensure users only retrieve or update information they are allowed to access, forced filters can be
+implemented. This restriction can be added with the custom [extension](https://swagger.io/docs/specification/openapi-extensions) 
+`x-forced-filters`.
+
+Each route can have multiple forced filters and each filter entity must contain the following fields:
+- `value`: `[string]` The value of the forced filter. Dynamic values:
+    - `_UPN`: The UPN from the authorization token 
+    - `_IP` The IP address from the current request
+- `field`: `[string]` The field where the filter must be applied to. (Use `.` to access nested fields)
+
+~~~yaml
+paths:
+  /pets:
+    get:
+      description: Get a list of all pets
+      operationId: generic_get_multiple
+      x-openapi-router-controller: openapi_server.controllers.default_controller
+    post:
+      description: Create a new pet
+      operationId: generic_post_single
+      x-openapi-router-controller: openapi_server.controllers.default_controller
+    x-forced-filters:
+      - value: _UPN
+        field: owner_email
+      - value: true
+        field: active_pet
+~~~ 
+
+> Currently, only `equal_to` comparisons are supported (e.g. `_UPN == owner_email`)
 
 #### Schemas
 A big part of the OpenAPI specification are the [schemas](https://swagger.io/docs/specification/data-models/) that can be defined.
