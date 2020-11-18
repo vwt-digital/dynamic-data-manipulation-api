@@ -131,40 +131,44 @@ class ForcedFilters:
         :type entity: dict | None
         """
 
-        for item in filters:
-            value = self.get_restriction_values(item['value'])
+        if filters:
+            if not entity:
+                raise ValueError("The requested entity has no value")
 
-            if entity and value:
-                self.process_entity_validation(entity, item['field'], value)
-            else:
-                raise ValueError("Request has insufficient route filters")
+            for item in filters:
+                map_list = item['field'].split('.')
+
+                if item['value'] == '_UPN':
+                    self.compare_from_dict(g.user, entity, map_list)
+                elif item['value'] == '_IP':
+                    self.compare_from_dict(g.ip, entity, map_list)
+                elif item['value'] == '_NOT_EXISTING':
+                    self.value_not_existing(entity, map_list)
+                else:
+                    self.compare_from_dict(item['value'], entity, map_list)
+
 
     @staticmethod
-    def process_entity_validation(entity, field, value):
-        if entity:
-            try:
-                compare_from_dict(entity, field.split('.'), value)
-            except (KeyError, AttributeError):
-                raise PermissionError("Unauthorized request")
-
-        return None
+    def compare_from_dict(value, data_dict, map_list):
+        """Returns an error if value not same as mapping value"""
+        try:
+            if not value == get_from_dict(data_dict, map_list):
+                raise AttributeError
+        except (KeyError, AttributeError):
+            raise PermissionError("Unauthorized request")
 
     @staticmethod
-    def get_restriction_values(value):
-        if value == '_UPN' and g.user:
-            return g.user
-        elif value == '_IP' and g.ip:
-            return g.ip
-
-        return value
+    def value_not_existing(data_dict, map_list):
+        """Returns an error if mapping exists in dict"""
+        try:
+            get_from_dict(data_dict, map_list)
+        except (KeyError, AttributeError):
+            pass
+        else:
+            print(get_from_dict(data_dict, map_list))
+            raise PermissionError("Unauthorized request")
 
 
 def get_from_dict(data_dict, map_list):
     """Returns a dictionary based on a mapping"""
     return reduce(operator.getitem, map_list, data_dict)
-
-
-def compare_from_dict(data_dict, map_list, value):
-    """Returns an error if value not same as mapping value"""
-    if not value == get_from_dict(data_dict, map_list):
-        raise AttributeError

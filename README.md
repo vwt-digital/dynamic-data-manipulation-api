@@ -317,6 +317,7 @@ Each route can have multiple forced filters and each filter entity must contain 
 - `value`: `[string]` The value of the forced filter. Dynamic values:
     - `_UPN`: The UPN from the authorization token 
     - `_IP` The IP address from the current request
+    - `_NOT_EXISTING` If the field is not existing
 - `field`: `[string]` The field where the filter must be applied to. (Use `.` to access nested fields)
 
 ~~~yaml
