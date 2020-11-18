@@ -96,12 +96,16 @@ def get_schema_properties(spec, schema, request_method, parent_key=None):
         else:
             target_field = None
 
-        if schema_properties[field].get('type') in ['array', 'dict'] and '$ref' not in schema_properties[field]:
-            for key in schema_properties[field]:
-                if type(schema_properties[field][key]) == dict and '$ref' in schema_properties[field][key]:
-                    nested_schema = get_schema(spec, schema_properties[field][key]['$ref'])
-                    properties[field] = get_schema_properties(spec, nested_schema, request_method, cur_parent_key)
-                    break
+        if schema_properties[field].get('type') in ['array', 'object'] and '$ref' not in schema_properties[field]:
+            if 'properties' in schema_properties[field]:
+                properties[field] = get_schema_properties(
+                    spec, schema_properties[field], request_method, cur_parent_key)
+            else:
+                for key in schema_properties[field]:
+                    if type(schema_properties[field][key]) == dict and '$ref' in schema_properties[field][key]:
+                        nested_schema = get_schema(spec, schema_properties[field][key]['$ref'])
+                        properties[field] = get_schema_properties(spec, nested_schema, request_method, cur_parent_key)
+                        break
 
             if field not in properties:
                 properties[field] = schema_properties[field]
