@@ -1,16 +1,9 @@
-import logging
 import os
-from typing import AnyStr, Union
 
 import config
 
 import connexion
-from connexion import problem
-from connexion.decorators.validation import RequestBodyValidator
-from connexion.lifecycle import ConnexionResponse
-from connexion.utils import is_null
 from flask_cors import CORS
-from jsonschema import ValidationError
 from flask import request, current_app, g
 
 from openapi_server.datastoredatabase import DatastoreDatabase
@@ -19,34 +12,10 @@ from openapi_server.firestoredatabase import FirestoreDatabase
 from openapi_server import encoder, openapi_spec
 
 
-def validate_schema(self, data, url):
-    # type: (dict, AnyStr) -> Union[ConnexionResponse, None]
-    """
-    @Override default RequestBodyValidator validate_schema. Only used to edit return String.
-    @param self:
-    @param data:
-    @param url:
-    @return:
-    """
-    if self.is_null_value_valid and is_null(data):
-        return None
-
-    try:
-        self.validator.validate(data)
-    except ValidationError as exception:
-        logging.error(
-            "{url} validation error: {error}".format(url=url, error=exception.message), extra={'validator': 'body'})
-        return problem(400, 'Bad Request', 'Some data is missing or incorrect', type='Validation')
-
-    return None
-
-
 def get_app():
     """
     Returns the OpenAPI app
     """
-
-    RequestBodyValidator.validate_schema = validate_schema
 
     app = connexion.App(__name__, specification_dir='./openapi/')
     app.app.json_encoder = encoder.JSONEncoder
@@ -67,6 +36,7 @@ def get_app():
         g.response_keys = None
         g.request_id = None
         g.request_queries = None
+        g.forced_filters = None
         g.user = None
         g.token = None
         g.ip = None
@@ -81,7 +51,7 @@ def get_app():
     def before_request_func():
         try:
             g.db_table_name, g.db_table_id, g.db_keys, g.response_keys, \
-                g.request_id, g.request_queries = openapi_spec.get_database_info(request)
+                g.request_id, g.request_queries, g.forced_filters = openapi_spec.get_database_info(request)
         except ValueError as e:
             g.ip = request.remote_addr
             g.user = ''

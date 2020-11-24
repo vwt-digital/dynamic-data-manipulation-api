@@ -76,7 +76,9 @@ def generic_get_multiple():  # noqa: E501
         db_response = current_app.db_client.get_multiple(
             kind=g.db_table_name, db_keys=g.db_keys, res_keys=g.response_keys, filters=g.request_queries)
     except ValueError as e:
-        return make_response(jsonify(str(e)), 400)
+        return make_response({"detail": str(e), "status": 400, "title": "Bad Request", "type": "about:blank"}, 400)
+    except PermissionError as e:
+        return make_response({"detail": str(e), "status": 401, "title": "Unauthorized", "type": "about:blank"}, 401)
 
     if db_response:
         return create_content_response(db_response, request.content_type)
@@ -107,7 +109,9 @@ def generic_get_multiple_page(**kwargs):  # noqa: E501
             kind=g.db_table_name, db_keys=g.db_keys, res_keys=g.response_keys, filters=g.request_queries,
             page_cursor=page_cursor, page_size=page_size, page_action=page_action)
     except ValueError as e:
-        return make_response(jsonify(str(e)), 400)
+        return make_response({"detail": str(e), "status": 400, "title": "Bad Request", "type": "about:blank"}, 400)
+    except PermissionError as e:
+        return make_response({"detail": str(e), "status": 401, "title": "Unauthorized", "type": "about:blank"}, 401)
 
     if db_response:
         url_rule = re.sub(r'<.*?>', '', str(request.url_rule)).strip('/')
@@ -159,7 +163,9 @@ def generic_get_single(**kwargs):  # noqa: E501
         db_response = current_app.db_client.get_single(
             id=kwargs.get(g.request_id), kind=g.db_table_name, db_keys=g.db_keys, res_keys=g.response_keys)
     except ValueError as e:
-        return make_response(jsonify(str(e)), 400)
+        return make_response({"detail": str(e), "status": 400, "title": "Bad Request", "type": "about:blank"}, 400)
+    except PermissionError as e:
+        return make_response({"detail": str(e), "status": 401, "title": "Unauthorized", "type": "about:blank"}, 401)
 
     if db_response:
         return create_content_response(db_response, request.content_type)
@@ -186,7 +192,9 @@ def generic_post_single(**kwargs):  # noqa: E501
         db_response = current_app.db_client.post_single(
             body=kwargs.get('body', {}), kind=g.db_table_name, db_keys=g.db_keys, res_keys=g.response_keys)
     except ValueError as e:
-        return make_response(jsonify(str(e)), 400)
+        return make_response({"detail": str(e), "status": 400, "title": "Bad Request", "type": "about:blank"}, 400)
+    except PermissionError as e:
+        return make_response({"detail": str(e), "status": 401, "title": "Unauthorized", "type": "about:blank"}, 401)
 
     if db_response:
         return make_response(jsonify(db_response), 201)
@@ -219,7 +227,9 @@ def generic_put_single(**kwargs):  # noqa: E501
             id=kwargs.get(g.request_id), body=kwargs.get('body', {}), kind=g.db_table_name,
             db_keys=g.db_keys, res_keys=g.response_keys)
     except ValueError as e:
-        return make_response(jsonify(str(e)), 400)
+        return make_response({"detail": str(e), "status": 400, "title": "Bad Request", "type": "about:blank"}, 400)
+    except PermissionError as e:
+        return make_response({"detail": str(e), "status": 401, "title": "Unauthorized", "type": "about:blank"}, 401)
 
     if db_response:
         return make_response(jsonify(db_response), 201)
@@ -235,11 +245,19 @@ def generic_get_multiple3():  # noqa: E501
     return generic_get_multiple()
 
 
+def generic_get_multiple4():  # noqa: E501
+    return generic_get_multiple()
+
+
 def generic_get_multiple_page2(**kwargs):  # noqa: E501
     return generic_get_multiple_page(**kwargs)
 
 
 def generic_get_multiple_page3(**kwargs):  # noqa: E501
+    return generic_get_multiple_page(**kwargs)
+
+
+def generic_get_multiple_page4(**kwargs):  # noqa: E501
     return generic_get_multiple_page(**kwargs)
 
 
@@ -251,6 +269,10 @@ def generic_get_single3(**kwargs):  # noqa: E501
     return generic_get_single(**kwargs)
 
 
+def generic_get_single4(**kwargs):  # noqa: E501
+    return generic_get_single(**kwargs)
+
+
 def generic_post_single2(**kwargs):  # noqa: E501
     return generic_post_single(**kwargs)
 
@@ -259,9 +281,17 @@ def generic_post_single3(**kwargs):  # noqa: E501
     return generic_post_single(**kwargs)
 
 
+def generic_post_single4(**kwargs):  # noqa: E501
+    return generic_post_single(**kwargs)
+
+
 def generic_put_single2(**kwargs):  # noqa: E501
     return generic_put_single(**kwargs)
 
 
 def generic_put_single3(**kwargs):  # noqa: E501
+    return generic_put_single(**kwargs)
+
+
+def generic_put_single4(**kwargs):  # noqa: E501
     return generic_put_single(**kwargs)

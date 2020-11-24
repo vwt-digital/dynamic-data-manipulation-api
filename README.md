@@ -67,7 +67,8 @@ Because OpenAPI requires the specification to have unique `operationId`'s, this 
 To add two paths with both the posibility to post a single entity, the definitions `generic_post_single` and `generic_post_single2` can be used.
 Both these operations execute the same function but have unique identifiers.
 
-_For each definition are three implementations (e.g. `generic_post_single`, `generic_post_single2` and `generic_post_single3`)_
+_For each definition are four implementations (e.g. `generic_post_single`, `generic_post_single2`, 
+`generic_post_single3` and `generic_post_single4`)_
 
 #### Path parameter
 To create an endpoint for single entities, a path parameter has to be defined. This path parameter will be used to retrieve or update
@@ -295,17 +296,49 @@ To connect the endpoints to specific database tables, the custom [extension](htt
 individual paths, as shown below, and is required for each path.
 ~~~yaml
 paths:
-    /pets:
-      get:
-          description: Get a list of all pets
-          operationId: generic_get_multiple
-          x-openapi-router-controller: openapi_server.controllers.default_controller
-      post:
-        description: Create a new pet
-        operationId: generic_post_single
-        x-openapi-router-controller: openapi_server.controllers.default_controller
-      x-db-table-name: Pets
+  /pets:
+    get:
+      description: Get a list of all pets
+      operationId: generic_get_multiple
+      x-openapi-router-controller: openapi_server.controllers.default_controller
+    post:
+      description: Create a new pet
+      operationId: generic_post_single
+      x-openapi-router-controller: openapi_server.controllers.default_controller
+    x-db-table-name: Pets
 ~~~ 
+
+#### Forced Filters
+To ensure users only retrieve or update information they are allowed to access, forced filters can be
+implemented. This restriction can be added with the custom [extension](https://swagger.io/docs/specification/openapi-extensions) 
+`x-forced-filters`.
+
+Each route can have multiple forced filters and each filter entity must contain the following fields:
+- `value`: `[string]` The value of the forced filter. Dynamic values:
+    - `_UPN`: The UPN from the authorization token 
+    - `_IP` The IP address from the current request
+    - `_NOT_EXISTING` If the field is not existing
+- `field`: `[string]` The field where the filter must be applied to. (Use `.` to access nested fields)
+
+~~~yaml
+paths:
+  /pets:
+    get:
+      description: Get a list of all pets
+      operationId: generic_get_multiple
+      x-openapi-router-controller: openapi_server.controllers.default_controller
+    post:
+      description: Create a new pet
+      operationId: generic_post_single
+      x-openapi-router-controller: openapi_server.controllers.default_controller
+    x-forced-filters:
+      - value: _UPN
+        field: owner_email
+      - value: true
+        field: active_pet
+~~~ 
+
+> Currently, only `equal_to` comparisons are supported (e.g. `_UPN == owner_email`)
 
 #### Schemas
 A big part of the OpenAPI specification are the [schemas](https://swagger.io/docs/specification/data-models/) that can be defined.
@@ -411,7 +444,8 @@ To let the API now on each request what attribute the ID is, two things have to 
 ##### Field mapping
 It is possible to create a custom field mapping for each schema's property with the optional extension `x-target-field`.
 This can come in handy if a `POST` or `PUT` request has been specified, where all posted fields must be specifically 
-assigned to a nested object within the database. The optional extension is only implemented on `PUT` and `POST` routes.
+assigned to a nested object within the database. If not specified, the API will retrieve the value based on the schema 
+location.
 
 With the following example, the posted data will be translated to a nested dictionary as shown below.
 

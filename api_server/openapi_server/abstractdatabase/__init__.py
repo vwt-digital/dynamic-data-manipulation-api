@@ -1,3 +1,3 @@
-from .abstractdatabase import DatabaseInterface, EntityParser
+from .abstractdatabase import DatabaseInterface, EntityParser, ForcedFilters
 
-__all__ = ['DatabaseInterface', 'EntityParser']
+__all__ = ['DatabaseInterface', 'EntityParser', 'ForcedFilters']

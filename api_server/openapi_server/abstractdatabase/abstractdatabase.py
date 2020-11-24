@@ -40,6 +40,9 @@ class EntityParser:
         pass
 
     def parse(self, keys, entity, method, entity_id):
+        if not isinstance(entity, dict):
+            entity = entity.to_dict()
+
         if method == 'get':
             return self.create_object(keys, entity, entity_id, False)
         else:
@@ -57,17 +60,15 @@ class EntityParser:
                 continue
 
             if isinstance(keys[key], dict) and '_properties' in keys[key]:
-                try:
-                    new_entity = entity.get(key)
-                except (KeyError, AttributeError):
-                    new_entity = {}
-
-                nested_object = self.create_object(keys[key]['_properties'], new_entity, entity_id, value_bound)
+                nested_object = self.create_object(keys[key]['_properties'], entity, entity_id, value_bound)
                 if nested_object:
                     entity_to_return[key] = nested_object
             else:
                 try:
-                    entity_to_return[key] = entity.get(key)
+                    if value_bound:
+                        entity_to_return[key] = entity.get(key)
+                    else:
+                        entity_to_return[key] = get_from_dict(entity, keys[key].get('_target', key))
                 except (KeyError, AttributeError):
                     if value_bound and not keys[key].get('required', False):
                         continue
@@ -114,6 +115,58 @@ class EntityParser:
             else:
                 items.append((new_key, v['_target']))
         return dict(items)
+
+
+class ForcedFilters:
+
+    def __init__(self):
+        pass
+
+    def validate(self, filters, entity):
+        """Validates if the entity can be accessed based on the forced filters
+
+        :param filters: A list of forced filters
+        :type filters: list
+        :param entity: The entity
+        :type entity: dict | None
+        """
+
+        if filters:
+            if not entity:
+                raise ValueError("The requested entity has no value")
+
+            for item in filters:
+                map_list = item['field'].split('.')
+
+                if item['value'] == '_UPN':
+                    self.compare_from_dict(g.user, entity, map_list)
+                elif item['value'] == '_IP':
+                    self.compare_from_dict(g.ip, entity, map_list)
+                elif item['value'] == '_NOT_EXISTING':
+                    self.value_not_existing(entity, map_list)
+                else:
+                    self.compare_from_dict(item['value'], entity, map_list)
+
+
+    @staticmethod
+    def compare_from_dict(value, data_dict, map_list):
+        """Returns an error if value not same as mapping value"""
+        try:
+            if not value == get_from_dict(data_dict, map_list):
+                raise AttributeError
+        except (KeyError, AttributeError):
+            raise PermissionError("Unauthorized request")
+
+    @staticmethod
+    def value_not_existing(data_dict, map_list):
+        """Returns an error if mapping exists in dict"""
+        try:
+            get_from_dict(data_dict, map_list)
+        except (KeyError, AttributeError):
+            pass
+        else:
+            print(get_from_dict(data_dict, map_list))
+            raise PermissionError("Unauthorized request")
 
 
 def get_from_dict(data_dict, map_list):

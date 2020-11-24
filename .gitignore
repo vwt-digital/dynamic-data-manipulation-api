@@ -1,7 +1,8 @@
 config.py
 *.enc
 startup.sh
-*/openapi.yaml
+openapi/*
+models/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

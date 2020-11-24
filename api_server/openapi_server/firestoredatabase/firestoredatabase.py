@@ -5,7 +5,7 @@ import types
 from datetime import datetime
 from flask import g, request
 from google.cloud import firestore
-from openapi_server.abstractdatabase import DatabaseInterface, EntityParser
+from openapi_server.abstractdatabase import DatabaseInterface, EntityParser, ForcedFilters
 
 
 class FirestoreDatabase(DatabaseInterface):
@@ -60,6 +60,8 @@ class FirestoreDatabase(DatabaseInterface):
         doc = doc_ref.get()
 
         if doc.exists:
+            ForcedFilters().validate(filters=g.forced_filters, entity=doc.to_dict())
+
             return create_response(res_keys, doc)
 
         return None
@@ -85,6 +87,8 @@ class FirestoreDatabase(DatabaseInterface):
         doc = doc_ref.get()
 
         if doc.exists:
+            ForcedFilters().validate(filters=g.forced_filters, entity=doc.to_dict())
+
             new_doc = EntityParser().parse(db_keys, body, 'put', id)
             doc_ref.update(new_doc)
 
@@ -214,7 +218,16 @@ class FirestoreDatabase(DatabaseInterface):
             args = request.args.to_dict()
 
             for filter in filters:
-                if filter['name'] in args:
+                if filter['name'] == '_FORCED_FILTER':
+                    if filter['value'] == "_UPN":
+                        filter_value = g.user
+                    elif filter['value'] == "_IP":
+                        filter_value = g.ip
+                    else:
+                        filter_value = filter['value']
+
+                    query = query.where(filter['field'], filter['comparison'], filter_value)
+                elif filter['name'] in args:
                     filter_datatype = filter['schema']['format'] if \
                         filter['schema'].get('format') else filter['schema']['type']
                     filter_value = data_type_validator(args[filter['name']], filter_datatype)
