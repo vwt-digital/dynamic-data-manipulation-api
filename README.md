@@ -537,6 +537,16 @@ paths:
         - oauth2: [customscope.edit]
 ~~~
 
+##### End-to-end testing
+The API also supports access for end-to-end testing services. Next to the default OAuth2 configuration a specific E2E-configuration
+can be used to give access to clients based on a different flow. To enable this E2E-authentication, the attributes below
+must be added to the configuration file [config.py](api_server/config.example.py:
+- `OAUTH_E2E_EXPECTED_AUDIENCE`: `[string]` The Azure AD e2e-audience needed for access
+- `OAUTH_E2E_EXPECTED_ISSUER`: `[string]` The Azure AD issuer ID
+- `OAUTH_E2E_JWKS_URL`: `[string]` The Azure AD URL for JWK info
+- `OAUTH_E2E_APPID`: `[string]` The Azure AD e2e-APP ID for extra security check
+- `OAUTH_E2E_SCOPES`: `[list]` The Azure AD e2e-scopes added to the permissions
+
 ### Models
 After creating an OpenAPI specification the only thing left to do is generating models based on the defined schemas.
 These models are used by the API to validate the input and output of requests. These models are generated with help of
