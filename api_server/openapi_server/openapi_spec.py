@@ -43,7 +43,7 @@ def get_path_schema_reference(path_object, object_type):
                 try:
                     route_scheme_ref = get_from_dict(
                         path_object['responses'][code], ['content', content_type, 'schema', '$ref'])
-                except KeyError:
+                except (KeyError, AttributeError, TypeError):
                     pass
                     raise ValueError(f"The content-type '{content_type}' is not found within the specification")
                 else:
@@ -52,7 +52,7 @@ def get_path_schema_reference(path_object, object_type):
         try:
             route_scheme_ref = get_from_dict(
                 path_object['requestBody'], ['content', 'application/json', 'schema', '$ref'])
-        except KeyError:
+        except (KeyError, AttributeError, TypeError):
             pass
         else:
             return route_scheme_ref
@@ -66,7 +66,7 @@ def get_schema(spec, reference):
 
         try:
             route_schema = get_from_dict(spec, reference_list)
-        except KeyError:
+        except (KeyError, AttributeError, TypeError):
             pass
         else:
             return route_schema

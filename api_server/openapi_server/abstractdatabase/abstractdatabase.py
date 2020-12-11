@@ -69,7 +69,7 @@ class EntityParser:
                         entity_to_return[key] = entity.get(key)
                     else:
                         entity_to_return[key] = get_from_dict(entity, keys[key].get('_target', key))
-                except (KeyError, AttributeError):
+                except (KeyError, AttributeError, TypeError):
                     if value_bound and not keys[key].get('required', False):
                         continue
 
@@ -87,7 +87,7 @@ class EntityParser:
         for key in target_keys:
             try:
                 value = get_from_dict(entity, key.split('.'))
-            except KeyError:
+            except (KeyError, AttributeError, TypeError):
                 continue
             else:
                 entity_to_return = self.create_nested_object(target_keys[key], value, entity_to_return)
@@ -147,14 +147,13 @@ class ForcedFilters:
                 else:
                     self.compare_from_dict(item['value'], entity, map_list)
 
-
     @staticmethod
     def compare_from_dict(value, data_dict, map_list):
         """Returns an error if value not same as mapping value"""
         try:
             if not value == get_from_dict(data_dict, map_list):
                 raise AttributeError
-        except (KeyError, AttributeError):
+        except (KeyError, AttributeError, TypeError):
             raise PermissionError("Unauthorized request")
 
     @staticmethod
@@ -162,10 +161,9 @@ class ForcedFilters:
         """Returns an error if mapping exists in dict"""
         try:
             get_from_dict(data_dict, map_list)
-        except (KeyError, AttributeError):
+        except (KeyError, AttributeError, TypeError):
             pass
         else:
-            print(get_from_dict(data_dict, map_list))
             raise PermissionError("Unauthorized request")
 
 
