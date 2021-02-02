@@ -10,10 +10,10 @@ RUN apt-get update \
 RUN python -m venv /app/env
 ENV PATH="/app/env/bin:$PATH"
 
-COPY requirements.unexpanded.txt .
+COPY requirements.txt .
 RUN pip install --upgrade pip
 # pip install is fast here (while slow without the venv) :
-RUN pip install -r requirements.unexpanded.txt
+RUN pip install -r requirements.txt
 
 # ---- build image -----------------------------------------------
 FROM base AS build-image
