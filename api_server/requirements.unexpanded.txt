@@ -8,7 +8,7 @@ google-cloud-datastore==2.1.0
 google-cloud-firestore==2.0.2
 google-cloud-kms==2.2.0
 gunicorn==20.0.4
-jwkaas==0.7
+jwkaas==0.9
 pandas==1.2.0
 swagger-ui-bundle==0.0.8
 XlsxWriter==1.3.7
